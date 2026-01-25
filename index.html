@@ -3,234 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nouneim List | Final Edition</title>
+    <title>Nouneim List | Fixed</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        :root { 
-            --accent: #00ffd4; 
-            --bg-dark: #000; 
-            --bg-light: #222;
-            --card: rgba(255, 255, 255, 0.05);
-            --text: #fff;
-        }
-
-        /* Анимированный фон */
+        :root { --accent: #00ffd4; --bg: #000; --card: rgba(255, 255, 255, 0.07); --text: #fff; }
         body { 
-            margin: 0; 
-            color: var(--text); 
-            font-family: 'Inter', 'Segoe UI', sans-serif; 
-            background: linear-gradient(45deg, #000, #222, #000);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            margin: 0; color: var(--text); font-family: sans-serif; 
+            background: linear-gradient(45deg, #000, #1a1a1a, #000);
+            background-size: 400% 400%; animation: gradientBG 10s ease infinite;
             min-height: 100vh;
-            overflow-x: hidden;
         }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Переливающийся заголовок */
-        .main-logo {
-            font-size: 42px;
-            font-weight: 900;
-            text-align: center;
-            padding: 20px;
-            background: linear-gradient(to right, #00ffd4, #fff, #00ffd4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 200% auto;
-            animation: shine 3s linear infinite;
-        }
-
+        @keyframes gradientBG { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
+        
+        .main-logo { font-size: 32px; font-weight: 900; text-align: center; padding: 20px; background: linear-gradient(to right, #00ffd4, #fff, #00ffd4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200%; animation: shine 3s linear infinite; }
         @keyframes shine { to { background-position: 200% center; } }
 
-        nav { 
-            background: rgba(0, 0, 0, 0.8); 
-            backdrop-filter: blur(10px);
-            padding: 15px; 
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; 
-            position: sticky; top: 0; z-index: 100; 
-        }
+        nav { display: flex; justify-content: center; gap: 10px; padding: 15px; background: rgba(0,0,0,0.8); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--accent); }
+        button { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; cursor: pointer; border-radius: 5px; transition: 0.3s; }
+        button:hover { background: var(--accent); color: #000; transform: translateY(-2px); }
 
-        button { 
-            background: rgba(255,255,255,0.05); border: 1px solid var(--accent); 
-            color: var(--accent); padding: 10px 20px; cursor: pointer; 
-            font-weight: 600; border-radius: 8px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
-
-        button:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,255,212,0.3); background: var(--accent); color: #000; }
-
-        .page { display: none; padding: 20px; max-width: 1100px; margin: auto; animation: slideUp 0.5s ease-out; }
+        .page { display: none; padding: 20px; max-width: 900px; margin: auto; animation: fadeIn 0.4s; }
         .active { display: block; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* Уровни */
+        .level-card { background: var(--card); display: flex; align-items: center; margin-bottom: 10px; border-radius: 10px; overflow: hidden; cursor: pointer; border: 1px solid transparent; }
+        .level-card:hover { border-color: var(--accent); }
+        .lvl-img { width: 120px; height: 70px; object-fit: cover; }
+        .lvl-info { padding-left: 15px; }
 
-        /* Карточки уровней */
-        .level-card {
-            background: var(--card); border-radius: 15px; margin-bottom: 15px;
-            display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1);
-            overflow: hidden; transition: 0.3s; cursor: pointer; position: relative;
-        }
-        .level-card:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
-        .lvl-rank { width: 50px; font-size: 24px; font-weight: bold; color: var(--accent); text-align: center; }
-        .lvl-img { width: 150px; height: 85px; object-fit: cover; }
-        .lvl-info { padding: 0 20px; flex-grow: 1; text-align: left; }
+        /* Игроки */
+        .player-row { display: flex; align-items: center; background: var(--card); padding: 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; }
+        .avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 1px solid var(--accent); }
 
-        /* Чат */
-        #chatWindow {
-            background: #111; border: 2px solid var(--accent); border-radius: 20px;
-            width: 90%; max-width: 600px; height: 70vh; display: flex; flex-direction: column;
-        }
-        #chatMessages { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 15px; border-radius: 12px; max-width: 70%; position: relative; }
-        .msg.my { align-self: flex-end; background: var(--accent); color: #000; }
-        .msg.other { align-self: flex-start; background: #333; color: #fff; }
-
-        /* Уведомления */
-        #notifBox { position: fixed; left: 20px; bottom: 20px; z-index: 999; }
-        .notif-item { background: var(--accent); color: #000; padding: 10px 20px; border-radius: 8px; margin-top: 5px; animation: slideIn 0.3s; }
-
-        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal { background: #000; border: 2px solid var(--accent); padding: 30px; border-radius: 20px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        /* Модалки */
+        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
+        .modal { background: #111; border: 2px solid var(--accent); padding: 20px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         
-        input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: calc(100% - 26px); margin-bottom: 10px; border-radius: 10px; }
-        
-        .admin-controls { margin-top: 15px; padding-top: 15px; border-top: 1px dotted var(--accent); }
+        input { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; }
+        #notifBox { position: fixed; bottom: 20px; left: 20px; z-index: 9999; }
+        .notif { background: var(--accent); color: #000; padding: 10px; border-radius: 5px; margin-top: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="main-logo">NOUNEIM-LIST</div>
-    <div id="notifBox"></div>
 
-    <nav>
-        <button onclick="showPage('levelsPage')">Уровни</button>
-        <button onclick="showPage('playersPage')">Игроки</button>
-        <button onclick="showPage('blitzPage')">Блицкриг</button>
-        <button onclick="showPage('authPage')">Аккаунт</button>
-        <button id="adminReqBtn" style="display:none" onclick="showPage('adminReqPage')">Реквесты</button>
-        <button id="adminUsersBtn" style="display:none" onclick="showPage('adminUsersPage')">Участники</button>
-    </nav>
+<div class="main-logo" onclick="checkSecretAdmin()">NOUNEIM-LIST</div>
+<div id="notifBox"></div>
 
-    <div id="levelsPage" class="page active">
-        <div id="levelsList"></div>
+<nav>
+    <button onclick="showPage('levelsPage')">Уровни</button>
+    <button onclick="showPage('playersPage')">Игроки</button>
+    <button onclick="showPage('blitzPage')">Блицкриг</button>
+    <button onclick="showPage('authPage')">Аккаунт</button>
+</nav>
+
+<div id="levelsPage" class="page active">
+    <div id="levelsList"></div>
+</div>
+
+<div id="playersPage" class="page">
+    <select id="playerSort" onchange="renderPlayers()" style="width:100%; margin-bottom:15px; padding:10px; background:#111; color:#fff; border:1px solid var(--accent);">
+        <option value="pts">Топ по баллам</option>
+        <option value="rep">Топ по репутации</option>
+    </select>
+    <div id="playersList"></div>
+</div>
+
+<div id="blitzPage" class="page">
+    <div id="blitzSetup" style="background: var(--card); padding: 15px; border-radius: 10px;">
+        <h3>Начать Блицкриг</h3>
+        <select id="blitzLevelSelect"><option value="">Выберите уровень...</option></select>
+        <button onclick="startBlitzRun()" style="width: 100%; margin-top: 10px;">ИГРАТЬ</button>
     </div>
-
-    <div id="playersPage" class="page">
-        <div style="margin-bottom: 20px;">
-            <span>Сортировка: </span>
-            <select id="playerSort" onchange="renderPlayers()" style="width: 200px;">
-                <option value="pts">По баллам</option>
-                <option value="hardest">По хардесту</option>
-                <option value="rep">По репутации</option>
-            </select>
-        </div>
-        <div id="playersList"></div>
+    <div id="blitzPlayArea" style="display:none; text-align: center; margin-top: 20px;">
+        <h2 id="blitzTitle">Уровень</h2>
+        <h1 id="blitzRange" style="color: var(--accent); font-size: 48px;">0 - 100%</h1>
+        <button onclick="nextBlitzStage()" style="padding: 20px 40px; font-size: 20px;">ГОТОВО</button>
     </div>
+</div>
 
-    <div id="blitzPage" class="page">
-        <div style="background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px;">
-            <select id="blitzSelect" onchange="loadBlitz()"><option value="">Выбрать уровень...</option></select>
-            <div id="blitzAdmin" style="display:none">
-                <input type="text" id="blitzTitle" placeholder="Название уровня">
-                <input type="text" id="blitzNodes" placeholder="Старт-позы через пробел">
-                <button onclick="createBlitz()" style="width:100%">СОЗДАТЬ</button>
-            </div>
-        </div>
-        <div id="blitzGame"></div>
+<div id="authPage" class="page">
+    <div id="authForm">
+        <input type="text" id="logN" placeholder="Никнейм">
+        <input type="password" id="logP" placeholder="Пароль">
+        <button onclick="handleAuth('login')">Войти</button>
+        <button onclick="handleAuth('reg')">Регистрация</button>
     </div>
-
-    <div id="authPage" class="page">
-        <div id="authForm">
-            <input type="text" id="logN" placeholder="Логин">
-            <input type="password" id="logP" placeholder="Пароль">
-            <button onclick="handleAuth('login')">Войти</button>
-            <button onclick="handleAuth('reg')">Регистрация</button>
-        </div>
-        <div id="profileArea" style="display:none">
-            <img id="myAv" src="" style="width:150px; height:150px; border-radius: 50%; border: 3px solid var(--accent); cursor: pointer;" onclick="document.getElementById('avFile').click()">
-            <input type="file" id="avFile" style="display:none" onchange="updateAvatar(this)">
-            <h2 id="myName"></h2>
-            <input type="text" id="newN" placeholder="Новый ник">
-            <input type="password" id="newP" placeholder="Новый пароль">
-            <button onclick="updateProfile()">Обновить данные</button>
-            <hr>
-            <button onclick="openModal('recModal')" style="width:100%; background:var(--accent); color:#000">ОТПРАВИТЬ РЕКОРД</button>
-            <button onclick="logout()" style="color:red; border-color:red; margin-top:20px">Выйти</button>
-        </div>
+    <div id="profileArea" style="display:none; text-align: center;">
+        <img id="myAv" src="" style="width:120px; height:120px; border-radius:50%; border:2px solid var(--accent); cursor:pointer" onclick="document.getElementById('avFile').click()">
+        <input type="file" id="avFile" style="display:none" onchange="uploadAvatar(this)">
+        <h2 id="myNameDisplay"></h2>
+        <input type="text" id="newN" placeholder="Новый ник">
+        <button onclick="updateNick()">Сменить ник</button>
+        <hr>
+        <button onclick="openModal('recModal')" style="background:var(--accent); color:#000; width:100%">ОТПРАВИТЬ РЕКОРД</button>
+        <button onclick="logout()" style="color:red; margin-top:10px; border-color:red">Выйти</button>
     </div>
+</div>
 
-    <div id="lvlModal" class="overlay" onclick="closeModal('lvlModal')">
-        <div class="modal" onclick="event.stopPropagation()">
-            <h2 id="mLvlTitle"></h2>
-            <iframe id="mLvlVid" width="100%" height="315" frameborder="0" allowfullscreen></iframe>
-            <div id="mLvlRecs" style="margin-top:20px"></div>
-            <div id="lvlAdminEdit" class="admin-controls" style="display:none">
-                <input type="text" id="editLvlName">
-                <input type="text" id="editLvlImg">
-                <input type="text" id="editLvlVid">
-                <input type="number" id="editLvlPts">
-                <button onclick="saveLvlEdit()">Сохранить</button>
-                <button onclick="deleteLvl()" style="color:red">Удалить уровень</button>
-            </div>
-        </div>
+<div id="lvlModal" class="overlay" onclick="closeModal('lvlModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h2 id="mLvlTitle"></h2>
+        <div id="videoContainer"></div>
+        <div id="mLvlRecs" style="margin-top:20px"></div>
     </div>
+</div>
 
-    <div id="chatModal" class="overlay" onclick="closeModal('chatModal')">
-        <div id="chatWindow" class="modal" onclick="event.stopPropagation()">
-            <h3 id="chatPartnerName">Чат</h3>
-            <div id="chatMessages"></div>
-            <div style="display:flex; gap:10px; padding:10px;">
-                <input type="text" id="chatInput" placeholder="Сообщение..." style="margin:0">
-                <button onclick="sendMsg()">></button>
-            </div>
-        </div>
-    </div>
-
-    <div id="recModal" class="overlay" onclick="closeModal('recModal')">
-        <div class="modal" onclick="event.stopPropagation()">
-            <h2>Рекорд</h2>
-            <input type="text" id="recLvlName" placeholder="Название уровня">
-            <input type="number" id="recPerc" placeholder="Проценты">
-            <input type="text" id="recVid" placeholder="Ссылка на видео">
-            <button onclick="submitRecord()">Отправить</button>
-        </div>
-    </div>
-
-    <div id="playerModal" class="overlay" onclick="closeModal('playerModal')">
-        <div class="modal" onclick="event.stopPropagation()">
-            <img id="pAv" src="" style="width:100px; height:100px; border-radius:50%">
+<div id="playerModal" class="overlay" onclick="closeModal('playerModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div style="text-align:center">
+            <img id="pAv" src="" style="width:80px; height:80px; border-radius:50%">
             <h2 id="pName"></h2>
-            <div id="pRepDisplay" style="font-size:20px; margin-bottom:10px"></div>
-            <button onclick="vote(1)">+ Респек</button>
-            <button onclick="vote(-1)">- Диз</button>
-            <button onclick="openChat()">Написать сообщение</button>
-            <div id="pAdminTools" class="admin-controls" style="display:none">
-                <input type="number" id="admRepInp" placeholder="Установить репутацию">
-                <button onclick="setRepAdm()">ОК</button>
-            </div>
-            <hr>
-            <div id="pRecsList"></div>
+            <p id="pRepDisplay"></p>
+            <button onclick="vote(1)">+ Респект</button>
+            <button onclick="vote(-1)">- Дизлайк</button>
+            <button onclick="openChat()">Чат</button>
+        </div>
+        <hr>
+        <div id="pRecords"></div>
+    </div>
+</div>
+
+<div id="chatModal" class="overlay" onclick="closeModal('chatModal')">
+    <div class="modal" onclick="event.stopPropagation()" style="display:flex; flex-direction:column; height:70vh">
+        <h3 id="chatWith">Чат</h3>
+        <div id="chatMsgs" style="flex-grow:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column"></div>
+        <div style="display:flex; gap:5px">
+            <input type="text" id="chatInp" style="margin:0">
+            <button onclick="sendMsg()">></button>
         </div>
     </div>
-    
-    <div id="adminUsersPage" class="page">
-        <div id="usersList"></div>
-    </div>
-    <div id="adminReqPage" class="page">
-        <div id="reqsList"></div>
-    </div>
+</div>
 
-    </body>
-</html>
+<div id="recModal" class="overlay" onclick="closeModal('recModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h3>Отправить рекорд</h3>
+        <input type="text" id="rLvl" placeholder="Название уровня">
+        <input type="number" id="rPerc" placeholder="Проценты">
+        <input type="text" id="rVid" placeholder="Ссылка на видео (YouTube)">
+        <button onclick="submitRec()">Отправить</button>
+    </div>
+</div>
+
 <script>
-    // --- ИНИЦИАЛИЗАЦИЯ FIREBASE (Используй свой конфиг) ---
+    // --- FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
         authDomain: "nouneimlist.firebaseapp.com",
@@ -244,202 +161,232 @@
     const db = firebase.database();
 
     let user = JSON.parse(sessionStorage.getItem('user')) || null;
-    let allUsers = {}, levels = {}, currentChatPartner = null;
+    let allUsers = {}, levels = {}, chats = {};
 
-    // --- СЛУШАТЕЛИ СОБЫТИЙ ---
-    db.ref('users').on('value', s => { 
-        allUsers = s.val() || {}; 
-        renderPlayers(); 
-        renderUsersAdmin();
-        if(user && allUsers[user.name]) {
-            user = allUsers[user.name];
-            updateAccountUI();
-        }
-    });
+    // --- СЛУШАТЕЛИ ---
+    db.ref('users').on('value', s => { allUsers = s.val() || {}; renderPlayers(); if(user) { user = allUsers[user.name]; updateAccountUI(); } });
+    db.ref('levels').on('value', s => { levels = s.val() || {}; renderLevels(); updateBlitzList(); });
 
-    db.ref('levels').on('value', s => { 
-        levels = s.val() || {}; 
-        renderLevels(); 
-    });
+    // Починка видео (извлечение ID)
+    function getYoutubeID(url) {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    }
 
-    // --- ЛОГИКА УРОВНЕЙ ---
+    // --- ЛОГИКА ---
     function renderLevels() {
         const cont = document.getElementById('levelsList');
         cont.innerHTML = "";
-        const sorted = Object.entries(levels).sort((a,b) => b[1].points - a[1].points);
-        
-        sorted.forEach(([id, l], index) => {
+        Object.entries(levels).sort((a,b) => b[1].points - a[1].points).forEach(([id, l], i) => {
             cont.innerHTML += `
-                <div class="level-card" onclick="openLvlDetail('${id}')">
-                    <div class="lvl-rank">#${index+1}</div>
+                <div class="level-card" onclick="openLvlModal('${id}')">
+                    <div style="width:40px; text-align:center">#${i+1}</div>
                     <img src="${l.img}" class="lvl-img">
-                    <div class="lvl-info">
-                        <div style="font-size:20px; font-weight:bold">${l.name}</div>
-                    </div>
+                    <div class="lvl-info"><b>${l.name}</b></div>
                 </div>`;
         });
     }
 
-    function openLvlDetail(id) {
+    function openLvlModal(id) {
         const l = levels[id];
         document.getElementById('mLvlTitle').innerText = l.name;
-        document.getElementById('mLvlVid').src = l.video.replace("watch?v=", "embed/");
+        const vidId = getYoutubeID(l.video);
+        document.getElementById('videoContainer').innerHTML = vidId ? 
+            `<iframe width="100%" height="250" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>` : 'Видео недоступно';
         
-        let recsHtml = "<h4>РЕКОРДЫ:</h4>";
+        let recs = "<h4>Рекорды:</h4>";
         if(l.records) {
-            Object.entries(l.records).forEach(([rid, r]) => {
-                recsHtml += `
-                    <div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #222">
-                        <span onclick="openPlayerProfile('${r.name}')" style="cursor:pointer; color:var(--accent)">${r.name}</span>
-                        <span>${r.percent}%</span>
-                        <a href="${r.video}" target="_blank">🎬 Видео</a>
-                    </div>`;
+            Object.values(l.records).forEach(r => {
+                recs += `<div style="padding:5px; border-bottom:1px solid #333">
+                    <span style="color:var(--accent); cursor:pointer" onclick="openPlayerProfile('${r.name}')">${r.name}</span> - ${r.percent}% 
+                    <a href="${r.video}" target="_blank" style="color:#fff; text-decoration:none"> [🎬]</a>
+                </div>`;
             });
         }
-        document.getElementById('mLvlRecs').innerHTML = recsHtml;
-        
-        // Админ-панель
-        if(user && (user.role === 'admin' || user.role === 'mod')) {
-            document.getElementById('lvlAdminEdit').style.display = 'block';
-            document.getElementById('editLvlName').value = l.name;
-            // ... подгрузка остальных полей для правки
-        }
+        document.getElementById('mLvlRecs').innerHTML = recs;
         openModal('lvlModal');
     }
 
-    // --- ЛОГИКА ИГРОКОВ И СОРТИРОВКА ---
     function renderPlayers() {
-        const sortType = document.getElementById('playerSort').value;
         const cont = document.getElementById('playersList');
+        const sort = document.getElementById('playerSort').value;
         cont.innerHTML = "";
         
-        let playerArray = Object.values(allUsers).map(u => {
+        let arr = Object.values(allUsers).map(u => {
             let pts = 0;
-            // Считаем баллы по 100% рекордам
             Object.values(levels).forEach(l => {
-                if(l.records) Object.values(l.records).forEach(r => {
-                    if(r.name === u.name && r.percent == 100) pts += parseInt(l.points);
-                });
+                if(l.records) Object.values(l.records).forEach(r => { if(r.name === u.name && r.percent == 100) pts += Number(l.points); });
             });
-            return {...u, totalPts: pts};
+            return {...u, pts};
         });
 
-        // Сортировка
-        if(sortType === 'pts') playerArray.sort((a,b) => b.totalPts - a.totalPts);
-        if(sortType === 'rep') playerArray.sort((a,b) => (b.rep||0) - (a.rep||0));
+        arr.sort((a,b) => sort === 'pts' ? b.pts - a.pts : (b.rep||0) - (a.rep||0));
 
-        playerArray.forEach((p, i) => {
+        arr.forEach((p, i) => {
             cont.innerHTML += `
-                <div class="card-item" onclick="openPlayerProfile('${p.name}')" style="display:flex; align-items:center; padding:10px; margin-bottom:10px; background:var(--card); border-radius:12px;">
-                    <div style="width:40px">#${i+1}</div>
-                    <img src="${p.avatar || ''}" class="avatar-small">
-                    <div class="info">
-                        <b>${p.name}</b>
-                        <div style="font-size:12px; color:gray">REP: ${p.rep || 0} | PTS: ${p.totalPts}</div>
+                <div class="player-row" onclick="openPlayerProfile('${p.name}')">
+                    <div style="width:30px">#${i+1}</div>
+                    <img src="${p.avatar || 'https://i.imgur.com/6VBx3io.png'}" class="avatar-small">
+                    <div>
+                        <b>${p.name}</b><br>
+                        <small>PTS: ${p.pts} | REP: ${p.rep || 0}</small>
                     </div>
                 </div>`;
         });
     }
 
-    // --- ЧАТ И УВЕДОМЛЕНИЯ ---
-    function openChat() {
-        currentChatPartner = document.getElementById('pName').innerText;
-        document.getElementById('chatPartnerName').innerText = "Чат с " + currentChatPartner;
-        closeModal('playerModal');
-        openModal('chatModal');
-        loadMessages();
+    // --- БЛИЦКРИГ (0-100% ФИНАЛ) ---
+    let blitzStages = [];
+    let blitzIndex = 0;
+    function updateBlitzList() {
+        const sel = document.getElementById('blitzLevelSelect');
+        sel.innerHTML = '<option value="">Выберите уровень...</option>';
+        Object.entries(levels).forEach(([id, l]) => { sel.innerHTML += `<option value="${id}">${l.name}</option>`; });
     }
 
-    function loadMessages() {
-        const chatId = [user.name, currentChatPartner].sort().join("_");
+    function startBlitzRun() {
+        const id = document.getElementById('blitzLevelSelect').value;
+        if(!id) return;
+        const l = levels[id];
+        const nodes = (l.nodes || "20 40 60 80").split(' ').map(Number).sort((a,b)=>a-b);
+        
+        blitzStages = [];
+        // Генерируем стадии
+        for(let i=0; i<nodes.length; i++) {
+            blitzStages.push(`0 - ${nodes[i]}%`);
+            if(i > 0) blitzStages.push(`${nodes[i-1]} - ${nodes[i]}%`);
+        }
+        blitzStages.push(`0 - 100%`); // Та самая финальная стадия
+        
+        blitzIndex = 0;
+        document.getElementById('blitzTitle').innerText = l.name;
+        document.getElementById('blitzSetup').style.display = 'none';
+        document.getElementById('blitzPlayArea').style.display = 'block';
+        showBlitzStage();
+    }
+
+    function showBlitzStage() {
+        document.getElementById('blitzRange').innerText = blitzStages[blitzIndex];
+    }
+
+    function nextBlitzStage() {
+        blitzIndex++;
+        if(blitzIndex >= blitzStages.length) {
+            alert("БЛИЦКРИГ ПРОЙДЕН!");
+            document.getElementById('blitzSetup').style.display = 'block';
+            document.getElementById('blitzPlayArea').style.display = 'none';
+        } else {
+            showBlitzStage();
+        }
+    }
+
+    // --- АВТОРИЗАЦИЯ И ПРОФИЛЬ ---
+    function handleAuth(mode) {
+        const n = document.getElementById('logN').value.trim();
+        const p = document.getElementById('logP').value;
+        if(!n || !p) return;
+
+        if(mode === 'reg') {
+            if(allUsers[n]) return alert("Ник занят");
+            db.ref('users/'+n).set({name:n, pass:p, rep:0, role:'user'});
+            alert("Готово! Теперь войди.");
+        } else {
+            const u = allUsers[n];
+            if(u && u.pass === p) {
+                sessionStorage.setItem('user', JSON.stringify(u));
+                location.reload();
+            } else alert("Ошибка!");
+        }
+    }
+
+    function updateAccountUI() {
+        if(!user) return;
+        document.getElementById('authForm').style.display = 'none';
+        document.getElementById('profileArea').style.display = 'block';
+        document.getElementById('myNameDisplay').innerText = user.name;
+        document.getElementById('myAv').src = user.avatar || 'https://i.imgur.com/6VBx3io.png';
+    }
+
+    function openPlayerProfile(name) {
+        const p = allUsers[name];
+        if(!p) return;
+        document.getElementById('pName').innerText = p.name;
+        document.getElementById('pAv').src = p.avatar || 'https://i.imgur.com/6VBx3io.png';
+        document.getElementById('pRepDisplay').innerText = "Репутация: " + (p.rep || 0);
+        openModal('playerModal');
+    }
+
+    // --- ЧАТ ---
+    let chatTarget = "";
+    function openChat() {
+        if(!user) return alert("Войди в аккаунт");
+        chatTarget = document.getElementById('pName').innerText;
+        if(chatTarget === user.name) return alert("С самим собой?");
+        document.getElementById('chatWith').innerText = "Чат с " + chatTarget;
+        closeModal('playerModal');
+        openModal('chatModal');
+        
+        const chatId = [user.name, chatTarget].sort().join("_");
         db.ref('chats/' + chatId).on('value', s => {
-            const cont = document.getElementById('chatMessages');
+            const cont = document.getElementById('chatMsgs');
             cont.innerHTML = "";
-            s.forEach(c => {
-                const m = c.val();
-                const type = m.from === user.name ? 'my' : 'other';
-                cont.innerHTML += `<div class="msg ${type}">${m.text}</div>`;
+            s.forEach(m => {
+                const msg = m.val();
+                const align = msg.from === user.name ? 'flex-end' : 'flex-start';
+                const bg = msg.from === user.name ? varAccent() : '#333';
+                cont.innerHTML += `<div style="align-self:${align}; background:${bg}; padding:8px; border-radius:10px; margin:2px; max-width:80%; color:#000">${msg.text}</div>`;
             });
             cont.scrollTop = cont.scrollHeight;
         });
     }
+    
+    function varAccent() { return "#00ffd4"; }
 
     function sendMsg() {
-        const text = document.getElementById('chatInput').value;
-        if(!text || !currentChatPartner) return;
-        const chatId = [user.name, currentChatPartner].sort().join("_");
-        db.ref('chats/' + chatId).push({ from: user.name, text: text, time: Date.now() });
-        // Создаем уведомление для получателя
-        db.ref('notifs/' + currentChatPartner).set({ from: user.name, text: "написал тебе сообщение!" });
-        document.getElementById('chatInput').value = "";
+        const text = document.getElementById('chatInp').value;
+        if(!text) return;
+        const chatId = [user.name, chatTarget].sort().join("_");
+        db.ref('chats/'+chatId).push({ from: user.name, text: text });
+        db.ref('notifs/'+chatTarget).set({ from: user.name, type: 'msg' });
+        document.getElementById('chatInp').value = "";
     }
 
-    // Слушатель уведомлений для текущего юзера
+    // Уведомление
     if(user) {
-        db.ref('notifs/' + user.name).on('value', s => {
+        db.ref('notifs/'+user.name).on('value', s => {
             if(s.exists()) {
                 const n = s.val();
                 const box = document.getElementById('notifBox');
-                box.innerHTML = `<div class="notif-item"><b>${n.from}</b> ${n.text}</div>`;
-                setTimeout(() => { box.innerHTML = ""; db.ref('notifs/'+user.name).remove(); }, 5000);
+                box.innerHTML = `<div class="notif">${n.from} тебе написал!</div>`;
+                setTimeout(() => { box.innerHTML = ""; db.ref('notifs/'+user.name).remove(); }, 4000);
             }
         });
     }
 
-    // --- БЛИЦКРИГ (Stages Logic) ---
-    function createBlitz() {
-        const title = document.getElementById('blitzTitle').value;
-        const nodes = document.getElementById('blitzNodes').value.split(' ').map(Number).sort((a,b)=>a-b);
-        if(!title || nodes.length < 1) return;
-        db.ref('blitz').push({ title, nodes });
+    // Секретный админ
+    function checkSecretAdmin() {
+        if(!user) return;
+        const code = prompt("Введите код:");
+        if(code === "777") {
+            db.ref('users/'+user.name).update({role: 'admin'});
+            alert("Ты админ! Перезагрузи страницу.");
+        }
     }
 
-    function loadBlitz() {
-        // ... (Аналогично предыдущему коду, но с добавлением финальной стадии)
-        // Логика: если pts = [20, 40], стадии будут 1) 0-20, 20-40, 40-100; 2) 0-40, 20-100; 3) 0-100.
-    }
-
-    // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
     function showPage(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function logout() { sessionStorage.clear(); location.reload(); }
 
-    function handleAuth(mode) {
-        const n = document.getElementById('logN').value;
-        const p = document.getElementById('logP').value;
-        if(mode === 'reg') {
-            db.ref('users/'+n).set({name:n, pass:p, role:'user', rep:0, avatar:''});
-        } else {
-            const u = allUsers[n];
-            if(u && u.pass === p) {
-                sessionStorage.setItem('user', JSON.stringify(u));
-                location.reload();
-            }
-        }
-    }
-
-    function updateAccountUI() {
-        if(user) {
-            document.getElementById('authForm').style.display = 'none';
-            document.getElementById('profileArea').style.display = 'block';
-            document.getElementById('myName').innerText = user.name;
-            document.getElementById('myAv').src = user.avatar || 'https://i.imgur.com/6VBx3io.png';
-            if(user.role === 'admin') {
-                document.getElementById('adminReqBtn').style.display = 'block';
-                document.getElementById('adminUsersBtn').style.display = 'block';
-                document.getElementById('blitzAdmin').style.display = 'block';
-            }
-        }
-    }
-
-    function updateAvatar(input) {
+    function uploadAvatar(input) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            db.ref('users/' + user.name).update({ avatar: e.target.result });
-        };
+        reader.onload = e => db.ref('users/'+user.name).update({avatar: e.target.result});
         reader.readAsDataURL(input.files[0]);
     }
 </script>
+</body>
+</html>
