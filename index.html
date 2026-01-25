@@ -16,7 +16,7 @@
         }
         @keyframes gradientBG { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
         
-        .main-logo { font-size: 32px; font-weight: 900; text-align: center; padding: 20px; background: linear-gradient(to right, #00ffd4, #fff, #00ffd4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200%; animation: shine 3s linear infinite; }
+        .main-logo { font-size: 32px; font-weight: 900; text-align: center; padding: 20px; background: linear-gradient(to right, #00ffd4, #fff, #00ffd4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200%; animation: shine 3s linear infinite; cursor: pointer;}
         @keyframes shine { to { background-position: 200% center; } }
 
         nav { display: flex; justify-content: center; gap: 10px; padding: 15px; background: rgba(0,0,0,0.8); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--accent); }
@@ -27,21 +27,26 @@
         .active { display: block; }
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 
-        /* Уровни */
         .level-card { background: var(--card); display: flex; align-items: center; margin-bottom: 10px; border-radius: 10px; overflow: hidden; cursor: pointer; border: 1px solid transparent; }
         .level-card:hover { border-color: var(--accent); }
         .lvl-img { width: 120px; height: 70px; object-fit: cover; }
         .lvl-info { padding-left: 15px; }
 
-        /* Игроки */
         .player-row { display: flex; align-items: center; background: var(--card); padding: 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; }
         .avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 1px solid var(--accent); }
 
-        /* Модалки */
         .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
         .modal { background: #111; border: 2px solid var(--accent); padding: 20px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         
         input { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; }
+        
+        /* Блицкриг стили */
+        .blitz-node { background: var(--accent); color: #000; padding: 5px 12px; border-radius: 4px; font-weight: bold; cursor: help; user-select: none; }
+        .stage-box { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 10px; margin-top: 15px; }
+        .stage-locked { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
+        .blitz-btn { margin: 5px; background: #222; border: 1px solid #444; color: #fff; transition: 0.3s; }
+        .blitz-btn.active { background: #28a745; border-color: #28a745; }
+
         #notifBox { position: fixed; bottom: 20px; left: 20px; z-index: 9999; }
         .notif { background: var(--accent); color: #000; padding: 10px; border-radius: 5px; margin-top: 5px; font-weight: bold; }
     </style>
@@ -71,16 +76,20 @@
 </div>
 
 <div id="blitzPage" class="page">
-    <div id="blitzSetup" style="background: var(--card); padding: 15px; border-radius: 10px;">
-        <h3>Начать Блицкриг</h3>
-        <select id="blitzLevelSelect"><option value="">Выберите уровень...</option></select>
-        <button onclick="startBlitzRun()" style="width: 100%; margin-top: 10px;">ИГРАТЬ</button>
+    <div id="blitzAdminZone" style="display:none; background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--accent);">
+        <h3>Создание Блицкрига (Админ)</h3>
+        <input type="text" id="blitzNewTitle" placeholder="Название уровня">
+        <input type="number" id="blitzNewNode" placeholder="Введите число 1-100" onkeydown="if(event.key==='Enter') addNode()">
+        <div id="nodesPreview" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px"></div>
+        <button onclick="saveBlitzLevel()" style="width:100%">СОЗДАТЬ БЛИЦКРИГ</button>
     </div>
-    <div id="blitzPlayArea" style="display:none; text-align: center; margin-top: 20px;">
-        <h2 id="blitzTitle">Уровень</h2>
-        <h1 id="blitzRange" style="color: var(--accent); font-size: 48px;">0 - 100%</h1>
-        <button onclick="nextBlitzStage()" style="padding: 20px 40px; font-size: 20px;">ГОТОВО</button>
+
+    <div id="blitzSelection">
+        <h3>Выбрать уровень:</h3>
+        <select id="blitzLevelSelect" onchange="initBlitzGame()" style="width:100%; padding:10px; background:#111; color:#fff; border:1px solid var(--accent);"></select>
     </div>
+
+    <div id="blitzGameField" style="margin-top:20px"></div>
 </div>
 
 <div id="authPage" class="page">
@@ -94,8 +103,7 @@
         <img id="myAv" src="" style="width:120px; height:120px; border-radius:50%; border:2px solid var(--accent); cursor:pointer" onclick="document.getElementById('avFile').click()">
         <input type="file" id="avFile" style="display:none" onchange="uploadAvatar(this)">
         <h2 id="myNameDisplay"></h2>
-        <input type="text" id="newN" placeholder="Новый ник">
-        <button onclick="updateNick()">Сменить ник</button>
+        <div id="adminBadge" style="color:var(--accent); font-weight:bold; display:none">ADMINISTRATOR</div>
         <hr>
         <button onclick="openModal('recModal')" style="background:var(--accent); color:#000; width:100%">ОТПРАВИТЬ РЕКОРД</button>
         <button onclick="logout()" style="color:red; margin-top:10px; border-color:red">Выйти</button>
@@ -147,7 +155,6 @@
 </div>
 
 <script>
-    // --- FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
         authDomain: "nouneimlist.firebaseapp.com",
@@ -161,136 +168,33 @@
     const db = firebase.database();
 
     let user = JSON.parse(sessionStorage.getItem('user')) || null;
-    let allUsers = {}, levels = {}, chats = {};
+    let allUsers = {}, levels = {}, blitzLevels = {};
 
-    // --- СЛУШАТЕЛИ ---
-    db.ref('users').on('value', s => { allUsers = s.val() || {}; renderPlayers(); if(user) { user = allUsers[user.name]; updateAccountUI(); } });
-    db.ref('levels').on('value', s => { levels = s.val() || {}; renderLevels(); updateBlitzList(); });
+    db.ref('users').on('value', s => { 
+        allUsers = s.val() || {}; 
+        renderPlayers(); 
+        if(user) { 
+            user = allUsers[user.name]; 
+            updateAccountUI(); 
+        } 
+    });
+    db.ref('levels').on('value', s => { levels = s.val() || {}; renderLevels(); });
+    db.ref('blitz').on('value', s => { 
+        blitzLevels = s.val() || {}; 
+        updateBlitzSelect(); 
+    });
 
-    // Починка видео (извлечение ID)
-    function getYoutubeID(url) {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
-    }
-
-    // --- ЛОГИКА ---
-    function renderLevels() {
-        const cont = document.getElementById('levelsList');
-        cont.innerHTML = "";
-        Object.entries(levels).sort((a,b) => b[1].points - a[1].points).forEach(([id, l], i) => {
-            cont.innerHTML += `
-                <div class="level-card" onclick="openLvlModal('${id}')">
-                    <div style="width:40px; text-align:center">#${i+1}</div>
-                    <img src="${l.img}" class="lvl-img">
-                    <div class="lvl-info"><b>${l.name}</b></div>
-                </div>`;
-        });
-    }
-
-    function openLvlModal(id) {
-        const l = levels[id];
-        document.getElementById('mLvlTitle').innerText = l.name;
-        const vidId = getYoutubeID(l.video);
-        document.getElementById('videoContainer').innerHTML = vidId ? 
-            `<iframe width="100%" height="250" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>` : 'Видео недоступно';
-        
-        let recs = "<h4>Рекорды:</h4>";
-        if(l.records) {
-            Object.values(l.records).forEach(r => {
-                recs += `<div style="padding:5px; border-bottom:1px solid #333">
-                    <span style="color:var(--accent); cursor:pointer" onclick="openPlayerProfile('${r.name}')">${r.name}</span> - ${r.percent}% 
-                    <a href="${r.video}" target="_blank" style="color:#fff; text-decoration:none"> [🎬]</a>
-                </div>`;
-            });
-        }
-        document.getElementById('mLvlRecs').innerHTML = recs;
-        openModal('lvlModal');
-    }
-
-    function renderPlayers() {
-        const cont = document.getElementById('playersList');
-        const sort = document.getElementById('playerSort').value;
-        cont.innerHTML = "";
-        
-        let arr = Object.values(allUsers).map(u => {
-            let pts = 0;
-            Object.values(levels).forEach(l => {
-                if(l.records) Object.values(l.records).forEach(r => { if(r.name === u.name && r.percent == 100) pts += Number(l.points); });
-            });
-            return {...u, pts};
-        });
-
-        arr.sort((a,b) => sort === 'pts' ? b.pts - a.pts : (b.rep||0) - (a.rep||0));
-
-        arr.forEach((p, i) => {
-            cont.innerHTML += `
-                <div class="player-row" onclick="openPlayerProfile('${p.name}')">
-                    <div style="width:30px">#${i+1}</div>
-                    <img src="${p.avatar || 'https://i.imgur.com/6VBx3io.png'}" class="avatar-small">
-                    <div>
-                        <b>${p.name}</b><br>
-                        <small>PTS: ${p.pts} | REP: ${p.rep || 0}</small>
-                    </div>
-                </div>`;
-        });
-    }
-
-    // --- БЛИЦКРИГ (0-100% ФИНАЛ) ---
-    let blitzStages = [];
-    let blitzIndex = 0;
-    function updateBlitzList() {
-        const sel = document.getElementById('blitzLevelSelect');
-        sel.innerHTML = '<option value="">Выберите уровень...</option>';
-        Object.entries(levels).forEach(([id, l]) => { sel.innerHTML += `<option value="${id}">${l.name}</option>`; });
-    }
-
-    function startBlitzRun() {
-        const id = document.getElementById('blitzLevelSelect').value;
-        if(!id) return;
-        const l = levels[id];
-        const nodes = (l.nodes || "20 40 60 80").split(' ').map(Number).sort((a,b)=>a-b);
-        
-        blitzStages = [];
-        // Генерируем стадии
-        for(let i=0; i<nodes.length; i++) {
-            blitzStages.push(`0 - ${nodes[i]}%`);
-            if(i > 0) blitzStages.push(`${nodes[i-1]} - ${nodes[i]}%`);
-        }
-        blitzStages.push(`0 - 100%`); // Та самая финальная стадия
-        
-        blitzIndex = 0;
-        document.getElementById('blitzTitle').innerText = l.name;
-        document.getElementById('blitzSetup').style.display = 'none';
-        document.getElementById('blitzPlayArea').style.display = 'block';
-        showBlitzStage();
-    }
-
-    function showBlitzStage() {
-        document.getElementById('blitzRange').innerText = blitzStages[blitzIndex];
-    }
-
-    function nextBlitzStage() {
-        blitzIndex++;
-        if(blitzIndex >= blitzStages.length) {
-            alert("БЛИЦКРИГ ПРОЙДЕН!");
-            document.getElementById('blitzSetup').style.display = 'block';
-            document.getElementById('blitzPlayArea').style.display = 'none';
-        } else {
-            showBlitzStage();
-        }
-    }
-
-    // --- АВТОРИЗАЦИЯ И ПРОФИЛЬ ---
+    // --- АДМИНКА И ВХОД ---
     function handleAuth(mode) {
         const n = document.getElementById('logN').value.trim();
         const p = document.getElementById('logP').value;
-        if(!n || !p) return;
+        const secretAdminPass = "Q8484Uhrjrrjj(kfvlp )f";
 
         if(mode === 'reg') {
             if(allUsers[n]) return alert("Ник занят");
-            db.ref('users/'+n).set({name:n, pass:p, rep:0, role:'user'});
-            alert("Готово! Теперь войди.");
+            let role = (p === secretAdminPass) ? 'admin' : 'user';
+            db.ref('users/'+n).set({name:n, pass:p, rep:0, role: role});
+            alert("Зарегистрирован как " + role);
         } else {
             const u = allUsers[n];
             if(u && u.pass === p) {
@@ -306,72 +210,168 @@
         document.getElementById('profileArea').style.display = 'block';
         document.getElementById('myNameDisplay').innerText = user.name;
         document.getElementById('myAv').src = user.avatar || 'https://i.imgur.com/6VBx3io.png';
+        if(user.role === 'admin') {
+            document.getElementById('adminBadge').style.display = 'block';
+            document.getElementById('blitzAdminZone').style.display = 'block';
+        }
+    }
+
+    // --- РЕПУТАЦИЯ (ТОЛЬКО 1 РАЗ) ---
+    function vote(val) {
+        if(!user) return alert("Войди!");
+        const target = document.getElementById('pName').innerText;
+        if(user.name === target) return alert("Нельзя себе!");
+
+        const voteKey = `votes/${user.name}/${target}`;
+        db.ref(voteKey).once('value', s => {
+            if(s.exists()) return alert("Вы уже меняли репутацию этому игроку!");
+            
+            db.ref('users/'+target+'/rep').transaction(c => (c||0) + val);
+            db.ref(voteKey).set(true);
+            alert("Голос принят");
+        });
+    }
+
+    // --- БЛИЦКРИГ (ЛОГИКА) ---
+    let tempNodes = [];
+    function addNode() {
+        const val = parseInt(document.getElementById('blitzNewNode').value);
+        if(val > 0 && val <= 100 && !tempNodes.includes(val)) {
+            tempNodes.push(val);
+            tempNodes.sort((a,b)=>a-b);
+            renderTempNodes();
+        }
+        document.getElementById('blitzNewNode').value = "";
+    }
+    function renderTempNodes() {
+        const div = document.getElementById('nodesPreview');
+        div.innerHTML = "";
+        tempNodes.forEach(n => {
+            const span = document.createElement('span');
+            span.className = 'blitz-node';
+            span.innerText = n;
+            span.oncontextmenu = (e) => { e.preventDefault(); tempNodes = tempNodes.filter(x => x!==n); renderTempNodes(); };
+            div.appendChild(span);
+        });
+    }
+    function saveBlitzLevel() {
+        const title = document.getElementById('blitzNewTitle').value;
+        if(!title || tempNodes.length === 0) return alert("Название и числа!");
+        db.ref('blitz/'+title).set({title, nodes: tempNodes});
+        tempNodes = []; renderTempNodes();
+        document.getElementById('blitzNewTitle').value = "";
+    }
+
+    function updateBlitzSelect() {
+        const sel = document.getElementById('blitzLevelSelect');
+        sel.innerHTML = '<option value="">-- Выбери уровень --</option>';
+        Object.keys(blitzLevels).forEach(k => {
+            sel.innerHTML += `<option value="${k}">${k}</option>`;
+        });
+    }
+
+    function initBlitzGame() {
+        const key = document.getElementById('blitzLevelSelect').value;
+        if(!key) return;
+        const data = blitzLevels[key];
+        const nodes = data.nodes;
+        const container = document.getElementById('blitzGameField');
+        container.innerHTML = "";
+
+        // Создание стадий
+        for(let s = 0; s < nodes.length; s++) {
+            const stageDiv = document.createElement('div');
+            stageDiv.id = `stage_${s}`;
+            stageDiv.className = `stage-box ${s > 0 ? 'stage-locked' : ''}`;
+            stageDiv.innerHTML = `<h4>СТАДИЯ ${s+1} (${nodes[s]}%)</h4>`;
+            
+            const btnWrap = document.createElement('div');
+            
+            // Расчет интервалов для каждой стадии
+            // Пример: если узлы 20 40 60 80
+            // Стадия 1 (20%): 0-20, 20-40, 40-80, 80-100
+            // Стадия 2 (40%): 0-40, 20-80, 40-100... и т.д.
+            
+            const currentStep = nodes[s];
+            const ranges = [];
+            
+            // Базовые точки для кнопок: 0, и все узлы
+            const points = [0, ...nodes, 100].filter((v, i, a) => a.indexOf(v) === i);
+            
+            for(let i = 0; i < points.length; i++) {
+                let start = points[i];
+                let endIdx = i + (nodes.length - s); 
+                let end = points[endIdx];
+                
+                if(end !== undefined) {
+                    ranges.push([start, end]);
+                }
+            }
+
+            ranges.forEach(r => {
+                const b = document.createElement('button');
+                b.className = 'blitz-btn';
+                b.innerText = `${r[0]}% - ${r[1]}%`;
+                b.onclick = function() {
+                    this.classList.toggle('active');
+                    checkStageComplete(s);
+                };
+                btnWrap.appendChild(b);
+            });
+
+            stageDiv.appendChild(btnWrap);
+            container.appendChild(stageDiv);
+        }
+    }
+
+    function checkStageComplete(s) {
+        const stage = document.getElementById(`stage_${s}`);
+        const btns = stage.querySelectorAll('.blitz-btn');
+        const active = stage.querySelectorAll('.blitz-btn.active');
+
+        if(btns.length === active.length) {
+            const next = document.getElementById(`stage_${s+1}`);
+            if(next) {
+                next.classList.remove('stage-locked');
+            } else {
+                alert("БЛИЦКРИГ ПРОЙДЕН! ПОЗДРАВЛЯЕМ!");
+            }
+        }
+    }
+
+    // --- ОСТАЛЬНЫЕ СТАНДАРТНЫЕ ФУНКЦИИ ---
+    function renderLevels() {
+        const cont = document.getElementById('levelsList');
+        cont.innerHTML = "";
+        Object.entries(levels).sort((a,b) => b[1].points - a[1].points).forEach(([id, l], i) => {
+            cont.innerHTML += `<div class="level-card" onclick="openLvlModal('${id}')">
+                <div style="width:40px; text-align:center">#${i+1}</div>
+                <img src="${l.img}" class="lvl-img">
+                <div class="lvl-info"><b>${l.name}</b></div>
+            </div>`;
+        });
+    }
+
+    function renderPlayers() {
+        const cont = document.getElementById('playersList');
+        const sort = document.getElementById('playerSort').value;
+        cont.innerHTML = "";
+        let arr = Object.values(allUsers).sort((a,b) => sort === 'pts' ? (b.pts||0) - (a.pts||0) : (b.rep||0) - (a.rep||0));
+        arr.forEach((p, i) => {
+            cont.innerHTML += `<div class="player-row" onclick="openPlayerProfile('${p.name}')">
+                <div style="width:30px">#${i+1}</div>
+                <img src="${p.avatar || 'https://i.imgur.com/6VBx3io.png'}" class="avatar-small">
+                <div><b>${p.name}</b><br><small>REP: ${p.rep || 0}</small></div>
+            </div>`;
+        });
     }
 
     function openPlayerProfile(name) {
         const p = allUsers[name];
-        if(!p) return;
         document.getElementById('pName').innerText = p.name;
         document.getElementById('pAv').src = p.avatar || 'https://i.imgur.com/6VBx3io.png';
         document.getElementById('pRepDisplay').innerText = "Репутация: " + (p.rep || 0);
         openModal('playerModal');
-    }
-
-    // --- ЧАТ ---
-    let chatTarget = "";
-    function openChat() {
-        if(!user) return alert("Войди в аккаунт");
-        chatTarget = document.getElementById('pName').innerText;
-        if(chatTarget === user.name) return alert("С самим собой?");
-        document.getElementById('chatWith').innerText = "Чат с " + chatTarget;
-        closeModal('playerModal');
-        openModal('chatModal');
-        
-        const chatId = [user.name, chatTarget].sort().join("_");
-        db.ref('chats/' + chatId).on('value', s => {
-            const cont = document.getElementById('chatMsgs');
-            cont.innerHTML = "";
-            s.forEach(m => {
-                const msg = m.val();
-                const align = msg.from === user.name ? 'flex-end' : 'flex-start';
-                const bg = msg.from === user.name ? varAccent() : '#333';
-                cont.innerHTML += `<div style="align-self:${align}; background:${bg}; padding:8px; border-radius:10px; margin:2px; max-width:80%; color:#000">${msg.text}</div>`;
-            });
-            cont.scrollTop = cont.scrollHeight;
-        });
-    }
-    
-    function varAccent() { return "#00ffd4"; }
-
-    function sendMsg() {
-        const text = document.getElementById('chatInp').value;
-        if(!text) return;
-        const chatId = [user.name, chatTarget].sort().join("_");
-        db.ref('chats/'+chatId).push({ from: user.name, text: text });
-        db.ref('notifs/'+chatTarget).set({ from: user.name, type: 'msg' });
-        document.getElementById('chatInp').value = "";
-    }
-
-    // Уведомление
-    if(user) {
-        db.ref('notifs/'+user.name).on('value', s => {
-            if(s.exists()) {
-                const n = s.val();
-                const box = document.getElementById('notifBox');
-                box.innerHTML = `<div class="notif">${n.from} тебе написал!</div>`;
-                setTimeout(() => { box.innerHTML = ""; db.ref('notifs/'+user.name).remove(); }, 4000);
-            }
-        });
-    }
-
-    // Секретный админ
-    function checkSecretAdmin() {
-        if(!user) return;
-        const code = prompt("Введите код:");
-        if(code === "777") {
-            db.ref('users/'+user.name).update({role: 'admin'});
-            alert("Ты админ! Перезагрузи страницу.");
-        }
     }
 
     function showPage(id) {
@@ -381,7 +381,6 @@
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function logout() { sessionStorage.clear(); location.reload(); }
-
     function uploadAvatar(input) {
         const reader = new FileReader();
         reader.onload = e => db.ref('users/'+user.name).update({avatar: e.target.result});
