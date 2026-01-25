@@ -3,113 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Технические работы | NOUNEIM-LIST</title>
+    <title>MAINTENANCE | CRITICAL</title>
     <style>
-        :root {
-            --accent: #00ffd4;
-            --bg: #000;
-        }
-
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: var(--bg);
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #000;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-family: 'Arial Black', sans-serif;
         }
 
-        /* Тот самый залипающий анимированный фон */
-        .background {
+        /* Эпилептический фон */
+        .flashing-bg {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, #000, #0a1a1a, #000, #1a0a1a);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg, 
+                #ff0000, #00ff00, #0000ff, #ffff00, #ff00ff, #00ffff, #ff0000
+            );
+            animation: 
+                rotate 0.1s linear infinite, 
+                glitchColor 0.05s steps(1) infinite;
+            filter: contrast(200%) brightness(150%);
             z-index: 1;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        @keyframes rotate {
+            from { transform: rotate(0deg) scale(1); }
+            to { transform: rotate(360deg) scale(1.5); }
         }
 
-        /* Контент поверх фона */
-        .content {
+        @keyframes glitchColor {
+            0% { filter: hue-rotate(0deg) invert(0); }
+            25% { filter: hue-rotate(90deg) invert(1); }
+            50% { filter: hue-rotate(180deg) invert(0); }
+            75% { filter: hue-rotate(270deg) invert(1); }
+            100% { filter: hue-rotate(360deg) invert(0); }
+        }
+
+        /* Контент */
+        .overlay {
             position: relative;
-            z-index: 2;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border: 5px solid #fff;
             text-align: center;
-            color: white;
+            box-shadow: 0 0 50px #fff;
+            transform: skew(-5deg);
+            animation: shake 0.1s infinite;
         }
 
-        .logo {
-            font-size: 4rem;
-            font-weight: 900;
-            letter-spacing: 5px;
-            background: linear-gradient(to right, var(--accent), #fff, var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 200%;
-            animation: shine 3s linear infinite;
-            margin-bottom: 10px;
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) skew(-5deg); }
+            50% { transform: translate(-2px, -2px) skew(5deg); }
+            100% { transform: translate(2px, 2px) skew(-5deg); }
         }
 
-        @keyframes shine {
-            to { background-position: 200% center; }
-        }
-
-        .status {
-            font-size: 1.2rem;
-            color: var(--accent);
+        h1 {
+            color: #fff;
+            font-size: 5rem;
+            margin: 0;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.8;
+            letter-spacing: -5px;
+            line-height: 0.9;
         }
 
-        /* Декоративный элемент "загрузки" */
-        .loader {
-            width: 50px;
-            height: 2px;
-            background: var(--accent);
-            margin: 20px auto;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .loader::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 100%;
+        p {
+            color: #ff0000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 10px;
             background: #fff;
-            left: -20px;
-            animation: loading 1.5s infinite;
-        }
-
-        @keyframes loading {
-            0% { left: -20px; }
-            100% { left: 50px; }
+            display: inline-block;
+            padding: 5px 10px;
         }
     </style>
 </head>
 <body>
 
-    <div class="background"></div>
+    <div class="flashing-bg"></div>
 
-    <div class="content">
-        <div class="logo">NOUNEIM-LIST</div>
-        <div class="status">Ведутся технические работы</div>
-        <div class="loader"></div>
-        <p style="font-size: 0.9rem; opacity: 0.5;">Мы скоро вернемся с обновленным функционалом</p>
+    <div class="overlay">
+        <h1>TECH<br>WORKS</h1>
+        <p>REBUILDING THE SYSTEM</p>
     </div>
 
 </body>
 </html>
+
