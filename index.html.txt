@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouneim List | Official</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root { 
+            --accent: #00ffd4; 
+            --bg: #1a1a1a; 
+            --card: rgba(30, 30, 30, 0.9); 
+            --text: #fff; 
+            --admin: #ffaa00; 
+        }
+        
+        body { 
+            margin: 0; color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif; overflow-x: hidden;
+            background: linear-gradient(135deg, #121212 0%, #1c1c1c 50%, #121212 100%);
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite; background-attachment: fixed;
+        }
+
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .main-title {
+            font-size: clamp(30px, 8vw, 60px); font-weight: 900; text-align: center;
+            padding: 40px 10px 10px; background: linear-gradient(to right, #00ffd4, #0088ff, #ff00ff, #ff0000, #00ffd4);
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: rainbow 4s linear infinite; text-transform: uppercase; letter-spacing: 5px;
+        }
+        @keyframes rainbow { to { background-position: 200% center; } }
+        
+        nav { background: rgba(15, 15, 15, 0.98); padding: 15px; border-bottom: 2px solid var(--accent); display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        
+        button { background: none; border: 2px solid var(--accent); color: var(--accent); padding: 10px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; font-size: 11px; border-radius: 6px; }
+        button:hover { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); transform: translateY(-2px); }
+        button.admin-btn { border-color: var(--admin); color: var(--admin); display: none; }
+
+        .page { display: none; padding: 20px; max-width: 1000px; margin: auto; text-align: center; animation: fadeIn 0.4s ease; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .search-bar { width: 100%; max-width: 400px; margin: 0 auto 20px; position: relative; }
+        .search-bar input { width: 100%; padding: 12px 20px; background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 25px; color: #fff; font-size: 14px; outline: none; transition: 0.3s; }
+
+        .level-container { display: grid; gap: 15px; margin-top: 10px; }
+        .card-item { 
+            background: var(--card); border-radius: 12px; display: flex; align-items: center; 
+            border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.4s; position: relative; overflow: hidden;
+            backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .card-item:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.7); }
+        
+        .level-img { width: 160px; height: 90px; object-fit: cover; border-right: 2px solid var(--accent); }
+        .info-block { padding: 0 20px; flex-grow: 1; text-align: left; }
+        .pts-badge { background: rgba(0, 255, 212, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal { background: #151515; padding: 30px; border: 2px solid var(--accent); border-radius: 15px; width: 90%; max-width: 550px; max-height: 85vh; overflow-y: auto; }
+        
+        input, select { background: #222; border: 1px solid #444; color: white; padding: 12px; width: calc(100% - 26px); margin-bottom: 12px; border-radius: 6px; display: block; }
+        
+        .admin-zone { border: 2px dashed var(--admin); padding: 20px; border-radius: 10px; margin-top: 20px; text-align: left; }
+        footer { padding: 40px; opacity: 0.4; font-size: 12px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="main-title">Nouneim List</div>
+
+    <nav>
+        <button onclick="showPage('levelsPage')">Уровни</button>
+        <button onclick="showPage('playersPage')">Игроки</button>
+        <button onclick="showPage('rulesPage')">Правила</button>
+        <button onclick="showPage('authPage')" id="navAuthBtn">Аккаунт</button>
+        <button onclick="showPage('adminRequestsPage')" id="navReqBtn" class="admin-btn">Реквесты</button>
+        <button onclick="showPage('adminPanelPage')" id="navAdminBtn" class="admin-btn">Управление</button>
+    </nav>
+
+    <div id="levelsPage" class="page active">
+        <div class="search-bar"><input type="text" id="lvlSearch" placeholder="Поиск..." oninput="renderLevels()"></div>
+        <div class="level-container" id="levelsList"></div>
+    </div>
+
+    <div id="playersPage" class="page">
+        <div class="search-bar"><input type="text" id="playerSearch" placeholder="Найти игрока..." oninput="renderPlayers()"></div>
+        <div class="level-container" id="playersListContainer"></div>
+    </div>
+
+    <div id="adminRequestsPage" class="page">
+        <h1>Заявки на проверку</h1>
+        <div id="requestsList"></div>
+    </div>
+
+    <div id="adminPanelPage" class="page">
+        <h1>Управление листом</h1>
+        <div class="admin-zone">
+            <h3>➕ Добавить новый уровень</h3>
+            <input type="text" id="newLvlName" placeholder="Название">
+            <input type="text" id="newLvlImg" placeholder="Ссылка на превью (URL)">
+            <input type="text" id="newLvlVid" placeholder="YouTube ссылка">
+            <input type="number" id="newLvlPts" placeholder="Очки (PTS)">
+            <button onclick="addLevel()" style="border-color: var(--admin); color: var(--admin);">Добавить уровень</button>
+        </div>
+    </div>
+
+    <div id="authPage" class="page">
+        <div id="authGuest">
+            <h1>Вход</h1>
+            <div style="max-width: 400px; margin: auto; background: var(--card); padding: 30px; border-radius: 15px;">
+                <input type="text" id="authLogin" placeholder="Логин">
+                <input type="password" id="authPass" placeholder="Пароль">
+                <button onclick="handleAuth('login')" style="width: 100%;">Войти</button>
+                <button onclick="handleAuth('reg')" style="width: 100%; margin-top: 10px; border-color: #555;">Создать аккаунт</button>
+            </div>
+        </div>
+        <div id="authUser" style="display:none;">
+            <h1 id="userNameDisplay"></h1>
+            <div id="userRoleDisplay" class="pts-badge"></div>
+            <div style="margin-top:20px; background: rgba(0,255,212,0.1); padding: 20px; border-radius: 15px;">
+                <h2 style="margin:0;">Ваши PTS: <span id="userPointsDisplay">0</span></h2>
+            </div>
+            <button onclick="logout()" style="margin-top:20px; color: #ff4444; border-color: #ff4444;">Выйти</button>
+        </div>
+    </div>
+
+    <div id="rulesPage" class="page">
+        <h1>Правила</h1>
+        <div style="background: var(--card); padding: 30px; border-radius: 15px; text-align: left;">
+            <p>1. Видео с кликами или хендкамом.</p>
+            <p>2. Ноуклип без смертей или практика с 1 попытки засчитывается.</p>
+            <button onclick="openRequestModal()" style="width:100%; background: var(--accent); color: #000;">ОТПРАВИТЬ РЕКОРД</button>
+        </div>
+    </div>
+
+    <div id="levelModal" class="overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h2 id="modalTitle"></h2>
+            <iframe id="modalVideo" style="width:100%; height:280px; border-radius:10px; border:none;" allowfullscreen></iframe>
+            <div id="modalRecordsList" style="margin-top:20px;"></div>
+            <button onclick="closeModal()" style="margin-top:15px;">Закрыть</button>
+        </div>
+    </div>
+
+    <div id="requestModal" class="overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h2>Отправить рекорд</h2>
+            <input type="text" id="reqLvlName" placeholder="Название уровня">
+            <input type="number" id="reqPercent" placeholder="Процент (например, 100)">
+            <input type="text" id="reqVideoLink" placeholder="Ссылка на видео">
+            <button onclick="submitRequest()" style="width:100%;">Отправить админам</button>
+        </div>
+    </div>
+
+    <div id="profileModal" class="overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h2 id="profileName">Профиль</h2>
+            <div id="profileStats" class="pts-badge"></div>
+            <div id="profileRecords" style="margin-top:20px; text-align: left;"></div>
+            <button onclick="closeModal()" style="margin-top:15px;">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        // ИНИЦИАЛИЗАЦИЯ FIREBASE С ТВОИМИ КЛЮЧАМИ
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
+            authDomain: "nouneimlist.firebaseapp.com",
+            databaseURL: "https://nouneimlist-default-rtdb.firebaseio.com",
+            projectId: "nouneimlist",
+            storageBucket: "nouneimlist.firebasestorage.app",
+            messagingSenderId: "871712258235",
+            appId: "1:871712258235:web:982874240dd587d749119e"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let levelsDB = [];
+        let usersDB = [];
+        let requestsDB = [];
+        let currentUser = JSON.parse(sessionStorage.getItem('nl_session')) || null;
+        const ADMIN_DATA = { name: "Smirzix", pass: "Qt2k40dsak230l0" };
+
+        // ЗАГРУЗКА ДАННЫХ В РЕАЛЬНОМ ВРЕМЕНИ
+        db.ref('levels').on('value', snap => {
+            levelsDB = [];
+            snap.forEach(child => { levelsDB.push({ id: child.key, ...child.val() }); });
+            renderLevels();
+            renderPlayers();
+        });
+
+        db.ref('users').on('value', snap => {
+            usersDB = [];
+            snap.forEach(child => { usersDB.push(child.val()); });
+            renderPlayers();
+        });
+
+        db.ref('requests').on('value', snap => {
+            requestsDB = [];
+            snap.forEach(child => { requestsDB.push({ id: child.key, ...child.val() }); });
+            if(document.getElementById('adminRequestsPage').classList.contains('active')) renderRequests();
+        });
+
+        // ФУНКЦИИ УПРАВЛЕНИЯ
+        function addLevel() {
+            const name = document.getElementById('newLvlName').value;
+            const img = document.getElementById('newLvlImg').value || "https://i.ytimg.com/vi/placeholder/maxresdefault.jpg";
+            const video = document.getElementById('newLvlVid').value;
+            const points = parseInt(document.getElementById('newLvlPts').value);
+            if(!name || !video || !points) return alert("Заполни все поля!");
+            
+            db.ref('levels').push({ name, img, video, points, records: [] });
+            alert("Уровень добавлен в облако!");
+        }
+
+        function submitRequest() {
+            if(!currentUser) return alert("Войди в аккаунт!");
+            const level = document.getElementById('reqLvlName').value;
+            const percent = document.getElementById('reqPercent').value;
+            const video = document.getElementById('reqVideoLink').value;
+            if(!level || !percent || !video) return alert("Заполни поля!");
+
+            db.ref('requests').push({ user: currentUser.name, level, percent, video });
+            alert("Заявка отправлена!");
+            closeModal();
+        }
+
+        function renderRequests() {
+            const cont = document.getElementById('requestsList');
+            cont.innerHTML = "";
+            requestsDB.forEach((r) => {
+                cont.innerHTML += `
+                <div class="admin-zone">
+                    <b>${r.user}</b>: ${r.percent}% на ${r.level}<br>
+                    <a href="${r.video}" target="_blank" style="color:var(--accent)">Видео</a><br>
+                    <button onclick="approveReq('${r.id}')">Одобрить</button>
+                    <button onclick="deleteReq('${r.id}')" style="border-color:red; color:red;">Удалить</button>
+                </div>`;
+            });
+        }
+
+        function approveReq(reqId) {
+            const req = requestsDB.find(x => x.id === reqId);
+            const lvl = levelsDB.find(l => l.name.toLowerCase() === req.level.toLowerCase());
+            if(lvl) {
+                const recs = lvl.records || [];
+                recs.push({ name: req.user, percent: req.percent, video: req.video });
+                db.ref('levels/' + lvl.id + '/records').set(recs);
+                db.ref('requests/' + reqId).remove();
+                alert("Одобрено!");
+            } else { alert("Сначала добавьте уровень с таким названием!"); }
+        }
+
+        function deleteReq(id) { db.ref('requests/' + id).remove(); }
+
+        // ОТОБРАЖЕНИЕ
+        function renderLevels() {
+            const cont = document.getElementById('levelsList');
+            cont.innerHTML = "";
+            levelsDB.forEach((l) => {
+                cont.innerHTML += `
+                <div class="card-item" onclick="openLevel('${l.id}')">
+                    <img src="${l.img}" class="level-img">
+                    <div class="info-block"><b>${l.name}</b></div>
+                    <div class="pts-badge" style="margin-right:20px;">${l.points} PTS</div>
+                </div>`;
+            });
+        }
+
+        function renderPlayers() {
+            const cont = document.getElementById('playersListContainer');
+            cont.innerHTML = "";
+            const ranked = usersDB.map(u => {
+                let pts = 0;
+                levelsDB.forEach(l => {
+                    if(l.records && Object.values(l.records).find(r => r.name.toLowerCase() === u.name.toLowerCase() && r.percent == 100)) pts += l.points;
+                });
+                return { name: u.name, pts };
+            }).sort((a,b) => b.pts - a.pts);
+
+            ranked.forEach((p, i) => {
+                cont.innerHTML += `
+                <div class="card-item" style="padding:15px;" onclick="openPlayerProfile('${p.name}')">
+                    <span style="width:30px;">#${i+1}</span>
+                    <div style="flex:1;"><b>${p.name}</b></div>
+                    <div class="pts-badge">${p.pts} PTS</div>
+                </div>`;
+            });
+            if(currentUser) {
+                const my = ranked.find(x => x.name === currentUser.name);
+                if(my) document.getElementById('userPointsDisplay').innerText = my.pts;
+            }
+        }
+
+        function openLevel(id) {
+            const l = levelsDB.find(x => x.id === id);
+            document.getElementById('modalTitle').innerText = l.name;
+            document.getElementById('modalVideo').src = l.video.replace("watch?v=", "embed/");
+            const recs = l.records ? Object.values(l.records).map(r => `<div>${r.name}: ${r.percent}%</div>`).join('') : "Нет рекордов";
+            document.getElementById('modalRecordsList').innerHTML = recs;
+            document.getElementById('levelModal').style.display = 'flex';
+        }
+
+        function openPlayerProfile(name) {
+            document.getElementById('profileName').innerText = name;
+            let pts = 0; let html = "";
+            levelsDB.forEach(l => {
+                const r = l.records && Object.values(l.records).find(x => x.name.toLowerCase() === name.toLowerCase());
+                if(r) {
+                    if(r.percent == 100) pts += l.points;
+                    html += `<div>${l.name} — ${r.percent}%</div>`;
+                }
+            });
+            document.getElementById('profileStats').innerText = pts + " PTS";
+            document.getElementById('profileRecords').innerHTML = html || "Нет рекордов";
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function handleAuth(type) {
+            const l = document.getElementById('authLogin').value;
+            const p = document.getElementById('authPass').value;
+            if(type === 'reg') {
+                db.ref('users/' + l).set({ name: l, pass: p, role: 'user' });
+                alert("Аккаунт создан!");
+            } else {
+                if(l === ADMIN_DATA.name && p === ADMIN_DATA.pass) {
+                    currentUser = { name: l, role: 'admin' };
+                } else {
+                    const found = usersDB.find(u => u.name === l && u.pass === p);
+                    if(found) currentUser = found;
+                }
+                if(currentUser) {
+                    sessionStorage.setItem('nl_session', JSON.stringify(currentUser));
+                    updateUI();
+                } else alert("Неверно!");
+            }
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            updateUI();
+        }
+
+        function updateUI() {
+            const role = currentUser ? currentUser.role : 'guest';
+            document.querySelectorAll('.admin-btn').forEach(b => b.style.display = (role === 'admin') ? 'inline-block' : 'none');
+            if(currentUser) {
+                document.getElementById('authGuest').style.display = 'none';
+                document.getElementById('authUser').style.display = 'block';
+                document.getElementById('userNameDisplay').innerText = currentUser.name;
+                document.getElementById('userRoleDisplay').innerText = role.toUpperCase();
+            }
+        }
+
+        function logout() { sessionStorage.clear(); location.reload(); }
+        function closeModal() { document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none'); document.getElementById('modalVideo').src = ""; }
+        function openRequestModal() { document.getElementById('requestModal').style.display = 'flex'; }
+
+        updateUI();
+    </script>
+</body>
+</html>
