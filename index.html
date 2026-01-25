@@ -3,37 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nouneim List | Blitzkrieg</title>
+    <title>Nouneim List | Blitzkrieg Edition</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         :root { --accent: #00ffd4; --bg: #121212; --card: rgba(30, 30, 30, 0.9); --text: #fff; --admin: #ffaa00; --mod: #0088ff; --ban: #ff4444; }
-        body { margin: 0; color: var(--text); font-family: 'Segoe UI', sans-serif; background: #121212; min-height: 100vh; }
+        body { margin: 0; color: var(--text); font-family: 'Segoe UI', sans-serif; background: #121212; min-height: 100vh; overflow-x: hidden; }
         nav { background: rgba(10, 10, 10, 0.95); padding: 15px; border-bottom: 2px solid var(--accent); display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
         button { background: none; border: 2px solid var(--accent); color: var(--accent); padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s; margin: 2px; }
         button:hover { background: var(--accent); color: #000; }
-        button.active-blitz { background: #00ff00; color: #000; border-color: #00ff00; }
+        button.active-blitz { background: #00ff00 !important; color: #000 !important; border-color: #00ff00 !important; }
         .admin-btn { border-color: var(--admin); color: var(--admin); display: none; }
         .page { display: none; padding: 20px; max-width: 1000px; margin: auto; animation: fadeIn 0.3s; text-align: center; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .card-item { background: var(--card); border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid #333; cursor: pointer; }
-        .avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin: 0 10px; border: 1px solid var(--accent); }
-        .info { padding: 10px; flex-grow: 1; text-align: left; display: flex; align-items: center; }
-        .pts-badge { background: rgba(0,255,212,0.1); color: var(--accent); padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+        .card-item { background: var(--card); border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid #333; cursor: pointer; padding: 10px; transition: 0.2s; }
+        .card-item:hover { border-color: var(--accent); background: rgba(0, 255, 212, 0.05); }
+        .avatar-small { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 2px solid var(--accent); background: #222; }
+        .info { flex-grow: 1; text-align: left; }
+        .pts-badge { background: rgba(0,255,212,0.1); color: var(--accent); padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
-        .modal { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid var(--accent); width: 90%; max-width: 500px; overflow-y: auto; }
-        input { background: #222; border: 1px solid #444; color: #fff; padding: 10px; width: calc(100% - 22px); margin-bottom: 10px; border-radius: 5px; }
+        .modal { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid var(--accent); width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; position: relative; }
+        input, select { background: #222; border: 1px solid #444; color: #fff; padding: 12px; width: calc(100% - 26px); margin-bottom: 12px; border-radius: 8px; outline: none; }
+        input:focus { border-color: var(--accent); }
         
-        /* Blitzkrieg Styles */
-        .blitz-stage { background: #1a1a1a; border: 2px solid #333; border-radius: 15px; padding: 15px; margin-bottom: 20px; opacity: 0.5; pointer-events: none; }
-        .blitz-stage.unlocked { opacity: 1; pointer-events: all; border-color: var(--accent); }
-        .blitz-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
-        .blitz-node { width: 40px; height: 40px; background: #333; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
+        /* Блицкриг визуализация */
+        .blitz-stage { background: #1a1a1a; border: 2px solid #333; border-radius: 15px; padding: 15px; margin-bottom: 20px; opacity: 0.4; pointer-events: none; transition: 0.5s; }
+        .blitz-stage.unlocked { opacity: 1; pointer-events: all; border-color: var(--accent); box-shadow: 0 0 15px rgba(0,255,212,0.2); }
+        .blitz-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+        .blitz-node { width: 45px; height: 45px; background: #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; border: 1px solid #555; }
+        .blitz-node:hover { border-color: var(--accent); }
         
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #333; text-align: left; }
-        #secretBtn { position: fixed; bottom: 0; right: 0; width: 30px; height: 30px; opacity: 0.01; cursor: default; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border: 1px solid #333; text-align: left; }
+        #secretBtn { position: fixed; bottom: 0; right: 0; width: 40px; height: 40px; opacity: 0; cursor: default; z-index: 999; }
     </style>
 </head>
 <body>
@@ -45,25 +48,44 @@
         <button onclick="showPage('authPage')">Аккаунт</button>
         <button onclick="showPage('adminReqPage')" class="admin-btn" id="btnReq">Реквесты</button>
         <button onclick="showPage('adminUsersPage')" class="admin-btn" id="btnUsers">Участники</button>
-        <button onclick="showPage('adminEditPage')" class="admin-btn" id="btnEdit">Добавить</button>
     </nav>
 
     <div id="blitzPage" class="page">
-        <h1>Система Блицкриг</h1>
-        <div style="background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-            <input type="text" id="blitzTitle" placeholder="Название челледжа">
-            <input type="text" id="blitzPoints" placeholder="Введите точки (например: 20 40 60 80)">
-            <p style="font-size: 12px; color: #888;">Правый клик по точке, чтобы удалить её.</p>
-            <div id="pointChips" class="blitz-grid"></div>
-            <button onclick="startBlitz()" style="width: 100%; margin-top: 10px;">СОЗДАТЬ</button>
+        <h1>Блицкриг</h1>
+        <div style="background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #444;">
+            <h3>Выбрать уровень</h3>
+            <select id="blitzSelect" onchange="loadBlitzGame()">
+                <option value="">Выберите сохраненный Блицкриг...</option>
+            </select>
+            
+            <div id="blitzCreator" class="admin-btn" style="border-top: 1px solid #444; margin-top: 15px; padding-top: 15px;">
+                <h3>Создать новый</h3>
+                <input type="text" id="blitzTitle" placeholder="Название уровня">
+                <input type="text" id="blitzPoints" placeholder="Старт позы (например: 15 30 45 70)">
+                <div id="pointChips" class="blitz-grid"></div>
+                <button onclick="saveBlitzToDB()" style="width: 100%;">СОХРАНИТЬ В ОБЛАКО</button>
+            </div>
         </div>
-        <div id="blitzGame"></div>
+        <div id="blitzGameArea"></div>
     </div>
 
-    <div id="levelsPage" class="page active"><h1>TOP LEVELS</h1><div id="levelsList"></div></div>
-    <div id="playersPage" class="page"><h1>Рейтинг</h1><div id="playersList"></div></div>
+    <div id="levelsPage" class="page active">
+        <h1>TOP LEVELS</h1>
+        <div id="levelsList"></div>
+    </div>
+
+    <div id="playersPage" class="page">
+        <h1>Рейтинг игроков</h1>
+        <div id="playersList"></div>
+    </div>
+
+    <div id="adminReqPage" class="page">
+        <h1>Реквесты (Заявки)</h1>
+        <div id="reqList"></div>
+    </div>
+
     <div id="adminUsersPage" class="page">
-        <h1>Участники</h1>
+        <h1>Управление участниками</h1>
         <table id="usersTable">
             <thead><tr><th>Ник</th><th>Роль</th><th>Статус</th><th>Действие</th></tr></thead>
             <tbody id="usersTableBody"></tbody>
@@ -79,31 +101,56 @@
             <button onclick="auth('reg')">Регистрация</button>
         </div>
         <div id="userBox" style="display:none">
-            <img id="myAv" src="" class="avatar-small" style="width:100px; height:100px;"><br>
-            <h1 id="myNick"></h1>
-            <input type="text" id="changeAvInp" placeholder="URL аватара">
-            <button onclick="changeAvatar()">Сменить аву</button>
-            <button onclick="logout()">Выйти</button>
+            <img id="myAv" src="" class="avatar-small" style="width:120px; height:120px; margin-bottom: 15px;"><br>
+            <h1 id="myNick" style="margin: 5px 0;"></h1>
+            <p id="myRoleDisplay" style="color: var(--accent); margin-bottom: 20px;"></p>
+            
+            <div style="background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px;">
+                <h3>Сменить аватар</h3>
+                <input type="file" id="avFile" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
+                <button onclick="document.getElementById('avFile').click()">Выбрать файл</button>
+            </div>
+            
+            <button onclick="logout()" style="color:var(--ban); border-color:var(--ban)">Выйти</button>
+            <hr>
+            <button onclick="openRecordModal()" style="width:100%; background:var(--accent); color:#000">ОТПРАВИТЬ РЕКОРД</button>
         </div>
     </div>
 
     <div id="profileModal" class="overlay" onclick="this.style.display='none'">
         <div class="modal" onclick="event.stopPropagation()">
-            <img id="pAv" src="" class="avatar-small" style="width:80px; height:80px; display:block; margin:auto;">
+            <img id="pAv" src="" class="avatar-small" style="width:100px; height:100px; display:block; margin:auto; margin-bottom: 15px;">
             <h2 id="pName"></h2>
-            <div id="pRep" style="font-weight:bold;"></div>
+            <div id="pRep" style="font-size: 24px; font-weight:bold; margin-bottom: 15px;"></div>
+            
             <div id="pActions">
-                <button onclick="changeRep(1)" class="rep-plus">Репутация +</button>
-                <button onclick="changeRep(-1)" class="rep-minus">Репутация -</button>
+                <button onclick="changeRep(1)" style="color: #00ff00;">Респект +1</button>
+                <button onclick="changeRep(-1)" style="color: #ff4444;">Дизлайк -1</button>
             </div>
-            <hr><div id="pStats"></div>
+
+            <div id="adminRepBox" class="admin-btn" style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px;">
+                <p>Админ-панель репутации:</p>
+                <input type="number" id="adminRepInp" placeholder="Установить значение">
+                <button onclick="setRepAdmin()">Применить</button>
+            </div>
+            <hr>
+            <div id="pStats" style="text-align: left;"></div>
+        </div>
+    </div>
+
+    <div id="recModal" class="overlay" onclick="this.style.display='none'">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h2>Отправить рекорд</h2>
+            <input type="text" id="recLvl" placeholder="Название уровня">
+            <input type="number" id="recPerc" placeholder="Процент (0-100)">
+            <input type="text" id="recVid" placeholder="Ссылка на видео">
+            <button onclick="sendRec()" style="width:100%; background: var(--accent); color: #000;">ОТПРАВИТЬ</button>
         </div>
     </div>
 
     <div id="secretBtn" onclick="secretAdmin()"></div>
 
     <script>
-        // КОНФИГ ТВОЕЙ БАЗЫ
         const firebaseConfig = {
             apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
             authDomain: "nouneimlist.firebaseapp.com",
@@ -118,18 +165,51 @@
 
         let user = JSON.parse(sessionStorage.getItem('user')) || null;
         let allUsers = {};
+        let blitzList = {};
+        let levels = [];
         let blitzPoints = [];
         let viewingUser = null;
 
-        // Инициализация базы
+        // --- ЗАГРУЗКА ДАННЫХ ---
         db.ref('users').on('value', s => { 
             allUsers = s.val() || {}; 
             renderPlayers(); 
             renderUsersTable();
-            if(user && allUsers[user.name]) user = allUsers[user.name];
+            if(user && allUsers[user.name]) {
+                user = allUsers[user.name];
+                updateUI();
+            }
         });
 
-        // --- БЛИЦКРИГ ЛОГИКА ---
+        db.ref('levels').on('value', s => {
+            levels = [];
+            s.forEach(c => { levels.push({id: c.key, ...c.val()}); });
+            renderLevels();
+        });
+
+        db.ref('blitz').on('value', s => {
+            blitzList = s.val() || {};
+            const sel = document.getElementById('blitzSelect');
+            sel.innerHTML = '<option value="">Выберите сохраненный Блицкриг...</option>';
+            Object.keys(blitzList).forEach(id => {
+                sel.innerHTML += `<option value="${id}">${blitzList[id].title}</option>`;
+            });
+        });
+
+        db.ref('requests').on('value', s => {
+            const cont = document.getElementById('reqList');
+            if(!cont) return;
+            cont.innerHTML = "";
+            s.forEach(c => {
+                const r = c.val();
+                cont.innerHTML += `<div class="card-item">
+                    <div class="info"><b>${r.user}</b> -> ${r.level} (${r.percent}%)</div>
+                    <button onclick="db.ref('requests/${c.key}').remove()">Удалить</button>
+                </div>`;
+            });
+        });
+
+        // --- БЛИЦКРИГ ОБЛАКО ---
         const bpInp = document.getElementById('blitzPoints');
         bpInp.addEventListener('input', () => {
             const vals = bpInp.value.split(' ').filter(v => v !== "" && v >= 1 && v <= 100);
@@ -144,81 +224,161 @@
                 const d = document.createElement('div');
                 d.className = 'blitz-node';
                 d.innerText = p;
-                d.oncontextmenu = (e) => { e.preventDefault(); removePoint(p); };
+                d.oncontextmenu = (e) => { e.preventDefault(); blitzPoints = blitzPoints.filter(x => x !== p); bpInp.value = blitzPoints.join(' '); renderBlitzChips(); };
                 cont.appendChild(d);
             });
         }
 
-        function removePoint(p) {
-            blitzPoints = blitzPoints.filter(x => x !== p);
-            bpInp.value = blitzPoints.join(' ');
+        function saveBlitzToDB() {
+            const title = document.getElementById('blitzTitle').value;
+            if(!title || blitzPoints.length === 0) return alert("Заполни данные!");
+            db.ref('blitz').push({ title, points: blitzPoints });
+            alert("Уровень сохранен в облако!");
+            document.getElementById('blitzTitle').value = "";
+            document.getElementById('blitzPoints').value = "";
+            blitzPoints = [];
             renderBlitzChips();
         }
 
-        function startBlitz() {
-            if(blitzPoints.length === 0) return;
-            const cont = document.getElementById('blitzGame');
-            cont.innerHTML = `<h2>${document.getElementById('blitzTitle').value || 'Челледж'}</h2>`;
+        function loadBlitzGame() {
+            const id = document.getElementById('blitzSelect').value;
+            if(!id) return;
+            const data = blitzList[id];
+            const cont = document.getElementById('blitzGameArea');
+            cont.innerHTML = `<h2>Уровень: ${data.title}</h2>`;
             
-            const points = [0, ...blitzPoints, 100];
-            const numStages = blitzPoints.length;
+            const pts = [0, ...data.points, 100];
+            const stages = data.points.length;
 
-            for(let s = 1; s <= numStages; s++) {
+            for(let s = 1; s <= stages; s++) {
                 const stageDiv = document.createElement('div');
-                stageDiv.id = `stage-${s}`;
+                stageDiv.id = `st-${s}`;
                 stageDiv.className = `blitz-stage ${s === 1 ? 'unlocked' : ''}`;
                 stageDiv.innerHTML = `<h3>Стадия ${s}</h3><div class="blitz-grid" id="grid-${s}"></div>`;
                 cont.appendChild(stageDiv);
 
-                for(let i = 0; i < points.length - s; i++) {
-                    const from = points[i];
-                    const to = points[i + s];
+                for(let i = 0; i < pts.length - s; i++) {
                     const btn = document.createElement('button');
-                    btn.innerText = `${from}% - ${to}%`;
-                    btn.onclick = () => toggleBlitzBtn(btn, s, numStages);
+                    btn.innerText = `${pts[i]}% - ${pts[i+s]}%`;
+                    btn.onclick = function() {
+                        this.classList.toggle('active-blitz');
+                        checkStage(s, stages);
+                    };
                     document.getElementById(`grid-${s}`).appendChild(btn);
                 }
             }
         }
 
-        function toggleBlitzBtn(btn, s, max) {
-            btn.classList.toggle('active-blitz');
+        function checkStage(s, total) {
             const grid = document.getElementById(`grid-${s}`);
-            const allBtns = grid.querySelectorAll('button');
-            const activeBtns = grid.querySelectorAll('.active-blitz');
-
-            if(allBtns.length === activeBtns.length) {
-                if(s < max) {
-                    document.getElementById(`stage-${s+1}`).classList.add('unlocked');
-                } else {
-                    alert("ПОЗДРАВЛЯЕМ! БЛИЦКРИГ ПРОЙДЕН! 🎉");
-                }
+            const btns = grid.querySelectorAll('button');
+            const active = grid.querySelectorAll('.active-blitz');
+            if(btns.length === active.length) {
+                if(s < total) document.getElementById(`st-${s+1}`).classList.add('unlocked');
+                else alert("БЛИЦКРИГ ПРОЙДЕН! 🎉");
             }
         }
 
-        // --- АККАУНТ И АДМИНКА ---
-        function secretAdmin() {
-            const p = prompt("Введите секретный код:");
-            if(p === "admin_ultra") {
-                db.ref('users/'+user.name).update({role: 'admin'});
-                alert("Теперь ты админ! Перезайди.");
-            }
+        // --- АВАТАР ФАЙЛ ---
+        function uploadAvatar(input) {
+            const file = input.files[0];
+            if(!file || file.size > 500000) return alert("Файл слишком большой (макс 500кб)");
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result;
+                db.ref('users/'+user.name).update({ avatar: base64 });
+                alert("Аватар успешно загружен!");
+            };
+            reader.readAsDataURL(file);
         }
 
+        // --- РЕПУТАЦИЯ ---
         function changeRep(val) {
-            if(!user) return alert("Войди!");
-            if(user.name === viewingUser) return alert("Нельзя себе!");
-            
-            // Проверка: голосовал ли уже этот юзер за этого игрока
+            if(!user) return alert("Войди в аккаунт!");
+            if(user.name === viewingUser) return alert("Нельзя менять себе!");
             const votePath = `votes/${viewingUser}/${user.name}`;
             db.ref(votePath).once('value', s => {
-                if(s.exists()) return alert("Вы уже меняли репутацию этому игроку!");
-                
+                if(s.exists()) return alert("Вы уже голосовали за этого игрока!");
                 const newRep = (allUsers[viewingUser].rep || 0) + val;
-                db.ref('users/'+viewingUser).update({rep: newRep});
+                db.ref('users/'+viewingUser).update({ rep: newRep });
                 db.ref(votePath).set(val);
-                alert("Репутация изменена!");
                 openProfile(viewingUser);
+            });
+        }
+
+        function setRepAdmin() {
+            const val = parseInt(document.getElementById('adminRepInp').value);
+            if(isNaN(val)) return;
+            db.ref('users/'+viewingUser).update({ rep: val });
+            alert("Репутация установлена админом!");
+            openProfile(viewingUser);
+        }
+
+        // --- ВСПОМОГАТЕЛЬНОЕ ---
+        function secretAdmin() {
+            if(prompt("Секретный код:") === "admin_ultra") {
+                db.ref('users/'+user.name).update({role: 'admin'});
+                location.reload();
+            }
+        }
+
+        function auth(mode) {
+            const n = document.getElementById('loginInp').value;
+            const p = document.getElementById('passInp').value;
+            if(mode === 'reg') {
+                if(allUsers[n]) return alert("Ник занят!");
+                db.ref('users/'+n).set({name:n, pass:p, role:'user', banned:false, rep:0, avatar:''});
+            } else {
+                const u = allUsers[n];
+                if(u && u.pass === p) {
+                    user = u;
+                    sessionStorage.setItem('user', JSON.stringify(user));
+                    location.reload();
+                } else alert("Ошибка входа!");
+            }
+        }
+
+        function sendRec() {
+            const lvl = document.getElementById('recLvl').value;
+            const prc = document.getElementById('recPerc').value;
+            if(!lvl || !prc) return;
+            db.ref('requests').push({ user: user.name, level: lvl, percent: prc });
+            alert("Рекорд отправлен на проверку!");
+            document.getElementById('recModal').style.display='none';
+        }
+
+        function renderPlayers() {
+            const cont = document.getElementById('playersList');
+            if(!cont) return;
+            cont.innerHTML = "";
+            const sorted = Object.values(allUsers).sort((a,b) => (b.rep||0) - (a.rep||0));
+            sorted.forEach(p => {
+                cont.innerHTML += `<div class="card-item" onclick="openProfile('${p.name}')">
+                    <img src="${p.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar-small">
+                    <div class="info"><b>${p.name}</b></div>
+                    <div class="pts-badge">${p.rep || 0} REP</div>
+                </div>`;
+            });
+        }
+
+        function openProfile(name) {
+            viewingUser = name;
+            const u = allUsers[name];
+            document.getElementById('pName').innerText = name;
+            document.getElementById('pAv').src = u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            document.getElementById('pRep').innerText = (u.rep || 0) + " REP";
+            document.getElementById('pRep').style.color = (u.rep||0) >= 0 ? "#00ff00" : "#ff4444";
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function renderLevels() {
+            const cont = document.getElementById('levelsList');
+            cont.innerHTML = "";
+            levels.forEach(l => {
+                cont.innerHTML += `<div class="card-item" style="cursor:default">
+                    <div class="info"><b>${l.name}</b></div>
+                    <div class="pts-badge">${l.points} PTS</div>
+                </div>`;
             });
         }
 
@@ -231,70 +391,33 @@
                 body.innerHTML += `<tr>
                     <td>${u.name}</td>
                     <td>${u.role}</td>
-                    <td>${u.banned ? 'BAN' : 'OK'}</td>
-                    <td>
-                        <button onclick="deleteUser('${u.name}')" style="color:red">Удалить</button>
-                    </td>
+                    <td>${u.banned ? 'БАН' : 'OK'}</td>
+                    <td><button onclick="if(confirm('Удалить?')) db.ref('users/${u.name}').remove()" style="color:red">УДАЛИТЬ</button></td>
                 </tr>`;
             });
         }
 
-        function deleteUser(name) {
-            if(confirm(`Удалить аккаунт ${name}?`)) db.ref('users/'+name).remove();
-        }
-
-        function auth(mode) {
-            const n = document.getElementById('loginInp').value;
-            const p = document.getElementById('passInp').value;
-            if(mode === 'reg') {
-                db.ref('users/'+n).set({name:n, pass:p, role:'user', banned:false, rep:0, avatar:''});
-            } else {
-                const u = allUsers[n];
-                if(u && u.pass === p) {
-                    user = u;
-                    sessionStorage.setItem('user', JSON.stringify(user));
-                    location.reload();
+        function updateUI() {
+            if(user) {
+                document.getElementById('authBox').style.display = 'none';
+                document.getElementById('userBox').style.display = 'block';
+                document.getElementById('myNick').innerText = user.name;
+                document.getElementById('myAv').src = user.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                document.getElementById('myRoleDisplay').innerText = "Статус: " + user.role.toUpperCase();
+                if(user.role === 'admin') {
+                    document.querySelectorAll('.admin-btn').forEach(b => b.style.display = 'block');
                 }
             }
-        }
-
-        function openProfile(name) {
-            viewingUser = name;
-            const u = allUsers[name];
-            document.getElementById('pName').innerText = name;
-            document.getElementById('pAv').src = u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-            document.getElementById('pRep').innerText = "REP: " + (u.rep || 0);
-            document.getElementById('profileModal').style.display = 'flex';
-        }
-
-        function renderPlayers() {
-            const cont = document.getElementById('playersList');
-            if(!cont) return;
-            cont.innerHTML = "";
-            Object.values(allUsers).forEach(p => {
-                cont.innerHTML += `<div class="card-item" onclick="openProfile('${p.name}')">
-                    <img src="${p.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar-small">
-                    <div class="info"><b>${p.name}</b></div>
-                    <div class="pts-badge">${p.rep || 0} REP</div>
-                </div>`;
-            });
         }
 
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
-
         function logout() { sessionStorage.clear(); location.reload(); }
+        function openRecordModal() { document.getElementById('recModal').style.display = 'flex'; }
 
-        // Показ админ кнопок
-        if(user && user.role === 'admin') {
-            document.querySelectorAll('.admin-btn').forEach(b => b.style.display = 'inline-block');
-            document.getElementById('myNick').innerText = user.name;
-            document.getElementById('myAv').src = user.avatar || '';
-            document.getElementById('authBox').style.display = 'none';
-            document.getElementById('userBox').style.display = 'block';
-        }
+        updateUI();
     </script>
 </body>
 </html>
