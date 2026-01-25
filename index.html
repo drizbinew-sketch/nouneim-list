@@ -3,30 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nouneim List | Cloud Edition</title>
+    <title>Nouneim List | Community</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         :root { --accent: #00ffd4; --bg: #121212; --card: rgba(30, 30, 30, 0.9); --text: #fff; --admin: #ffaa00; --mod: #0088ff; --ban: #ff4444; }
-        body { margin: 0; color: var(--text); font-family: 'Segoe UI', sans-serif; background: #121212; background-attachment: fixed; }
+        body { margin: 0; color: var(--text); font-family: 'Segoe UI', sans-serif; background: #121212; }
         nav { background: rgba(10, 10, 10, 0.95); padding: 15px; border-bottom: 2px solid var(--accent); display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
-        button { background: none; border: 2px solid var(--accent); color: var(--accent); padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s; }
+        button { background: none; border: 2px solid var(--accent); color: var(--accent); padding: 8px 15px; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s; margin: 2px; }
         button:hover { background: var(--accent); color: #000; }
         .admin-btn { border-color: var(--admin); color: var(--admin); display: none; }
-        .page { display: none; padding: 20px; max-width: 1000px; margin: auto; animation: fadeIn 0.3s; }
+        .page { display: none; padding: 20px; max-width: 1000px; margin: auto; animation: fadeIn 0.3s; text-align: center; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .card-item { background: var(--card); border-radius: 12px; display: flex; align-items: center; margin-bottom: 15px; border: 1px solid #333; position: relative; overflow: hidden; }
-        .level-img { width: 160px; height: 90px; object-fit: cover; }
-        .info { padding: 15px; flex-grow: 1; text-align: left; }
-        .pts-badge { background: rgba(0,255,212,0.1); color: var(--accent); padding: 5px 10px; border-radius: 5px; font-weight: bold; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; overflow-y: auto; }
-        .modal { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid var(--accent); width: 90%; max-width: 500px; }
+        .card-item { background: var(--card); border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; border: 1px solid #333; position: relative; cursor: pointer; transition: 0.2s; }
+        .card-item:hover { transform: scale(1.01); border-color: var(--accent); }
+        .level-img { width: 120px; height: 70px; object-fit: cover; border-radius: 8px 0 0 8px; }
+        .avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin: 0 10px; border: 1px solid var(--accent); }
+        .info { padding: 10px; flex-grow: 1; text-align: left; display: flex; align-items: center; }
+        .pts-badge { background: rgba(0,255,212,0.1); color: var(--accent); padding: 5px 10px; border-radius: 5px; font-weight: bold; margin-left: 10px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
+        .modal { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid var(--accent); width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         input { background: #222; border: 1px solid #444; color: #fff; padding: 10px; width: calc(100% - 22px); margin-bottom: 10px; border-radius: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #333; text-align: left; }
-        .status-tag { font-size: 10px; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; margin-right: 5px; }
-        .edit-btn { position: absolute; top: 10px; right: 10px; background: #333; border: none; color: #fff; cursor: pointer; padding: 5px 10px; border-radius: 5px; }
+        .rep-plus { color: #00ff00; } .rep-minus { color: #ff4444; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #333; text-align: left; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -41,7 +42,7 @@
     </nav>
 
     <div id="levelsPage" class="page active">
-        <h1 style="text-align: center;">TOP LEVELS</h1>
+        <h1>TOP LEVELS</h1>
         <div id="levelsList"></div>
     </div>
 
@@ -50,51 +51,47 @@
         <div id="playersList"></div>
     </div>
 
+    <div id="authPage" class="page">
+        <div id="authBox">
+            <h1>Вход</h1>
+            <input type="text" id="loginInp" placeholder="Логин">
+            <input type="password" id="passInp" placeholder="Пароль">
+            <button onclick="auth('login')">Войти</button>
+            <button onclick="auth('reg')">Регистрация</button>
+        </div>
+        <div id="userBox" style="display:none">
+            <img id="myAv" src="" class="avatar-small" style="width:100px; height:100px;">
+            <h1 id="myNick"></h1>
+            <p id="myRole"></p>
+            <input type="text" id="changeNickInp" placeholder="Новый ник">
+            <button onclick="changeNick()">Сменить ник</button>
+            <input type="text" id="changeAvInp" placeholder="Ссылка на аватар (URL)">
+            <button onclick="changeAvatar()">Сменить аватар</button>
+            <br><br>
+            <button onclick="logout()" style="color:var(--ban); border-color:var(--ban)">Выйти</button>
+            <hr>
+            <button onclick="document.getElementById('recModal').style.display='flex'" style="width:100%; background:var(--accent); color:#000">ОТПРАВИТЬ РЕКОРД</button>
+        </div>
+    </div>
+
     <div id="adminUsersPage" class="page">
-        <h1>Управление участниками</h1>
+        <h1>Участники</h1>
         <table id="usersTable">
-            <thead>
-                <tr>
-                    <th>Ник/Пароль</th>
-                    <th>Роль</th>
-                    <th>Очки</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Пользователь</th><th>Роль</th><th>Статус</th><th>Действия</th></tr></thead>
             <tbody id="usersTableBody"></tbody>
         </table>
     </div>
 
     <div id="adminEditPage" class="page">
-        <h1>Добавить новый уровень</h1>
+        <h1>Добавить уровень</h1>
         <input type="text" id="newLvlName" placeholder="Название">
         <input type="text" id="newLvlImg" placeholder="Превью (URL)">
-        <input type="text" id="newLvlVid" placeholder="Видео (YouTube)">
+        <input type="text" id="newLvlVid" placeholder="YouTube URL">
         <input type="number" id="newLvlPts" placeholder="Очки (PTS)">
         <button onclick="addLevel()" style="width:100%">Опубликовать</button>
     </div>
 
-    <div id="adminReqPage" class="page">
-        <h1>Заявки на рекорды</h1>
-        <div id="reqList"></div>
-    </div>
-
-    <div id="authPage" class="page">
-        <div id="authBox">
-            <h1>Вход / Регистрация</h1>
-            <input type="text" id="loginInp" placeholder="Логин">
-            <input type="password" id="passInp" placeholder="Пароль">
-            <button onclick="auth('login')">Войти</button>
-            <button onclick="auth('reg')">Создать аккаунт</button>
-        </div>
-        <div id="userBox" style="display:none">
-            <h1 id="myNick"></h1>
-            <p id="myRole"></p>
-            <button onclick="logout()">Выйти</button>
-            <hr>
-            <button onclick="openRecordModal()" style="width:100%; background:var(--accent); color:#000">ОТПРАВИТЬ РЕКОРД</button>
-        </div>
-    </div>
+    <div id="adminReqPage" class="page"><h1>Реквесты</h1><div id="reqList"></div></div>
 
     <div id="lvlModal" class="overlay" onclick="this.style.display='none'">
         <div class="modal" onclick="event.stopPropagation()">
@@ -104,13 +101,17 @@
         </div>
     </div>
 
-    <div id="editModal" class="overlay" onclick="this.style.display='none'">
+    <div id="profileModal" class="overlay" onclick="this.style.display='none'">
         <div class="modal" onclick="event.stopPropagation()">
-            <h2>Редактировать уровень</h2>
-            <input type="text" id="editName">
-            <input type="number" id="editPts">
-            <button onclick="saveEdit()">Сохранить</button>
-            <button onclick="deleteLvl()" style="color:red; border-color:red">Удалить уровень</button>
+            <img id="pAv" src="" class="avatar-small" style="width:80px; height:80px; display:block; margin:auto;">
+            <h2 id="pName" style="margin-bottom:5px;"></h2>
+            <div id="pRep" style="font-weight:bold; margin-bottom:10px;"></div>
+            <div id="pActions">
+                <button onclick="changeRep(1)" class="rep-plus">Репутация +</button>
+                <button onclick="changeRep(-1)" class="rep-minus">Репутация -</button>
+            </div>
+            <hr>
+            <div id="pStats" style="text-align:left;"></div>
         </div>
     </div>
 
@@ -120,7 +121,7 @@
             <input type="text" id="recLvl" placeholder="Название уровня">
             <input type="number" id="recPerc" placeholder="Процент">
             <input type="text" id="recVid" placeholder="Видео">
-            <button onclick="sendRec()">Отправить</button>
+            <button onclick="sendRec()" style="width:100%">Отправить</button>
         </div>
     </div>
 
@@ -140,56 +141,38 @@
         let user = JSON.parse(sessionStorage.getItem('user')) || null;
         let levels = [];
         let allUsers = {};
-        let currentEditId = null;
+        let viewingUser = null;
 
-        // ПАРОЛЬ АДМИНА
-        const ADMIN_PASS = "TopSecret_99"; 
+        const defaultAv = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-        function formatVid(url) {
-            let id = "";
-            if(url.includes('v=')) id = url.split('v=')[1].split('&')[0];
-            else if(url.includes('youtu.be/')) id = url.split('youtu.be/')[1].split('?')[0];
-            return "https://www.youtube.com/embed/" + id;
-        }
-
-        // ОБНОВЛЕНИЕ ДАННЫХ
+        // ЗАГРУЗКА
         db.ref('levels').on('value', s => {
             levels = [];
             s.forEach(c => { levels.push({id: c.key, ...c.val()}); });
-            levels.sort((a,b) => b.points - a.points); // СОРТИРОВКА ПО PTS
+            levels.sort((a,b) => b.points - a.points);
             renderLevels();
             renderPlayers();
         });
 
         db.ref('users').on('value', s => {
             allUsers = s.val() || {};
+            if(user && allUsers[user.name]) {
+                user = allUsers[user.name];
+                sessionStorage.setItem('user', JSON.stringify(user));
+                updateUI();
+            }
             renderPlayers();
             renderUsersTable();
-        });
-
-        db.ref('requests').on('value', s => {
-            const cont = document.getElementById('reqList');
-            cont.innerHTML = "";
-            s.forEach(c => {
-                const r = c.val();
-                cont.innerHTML += `<div class="card-item" style="padding:10px">
-                    <div style="flex:1">${r.user} -> ${r.level} (${r.percent}%)</div>
-                    <button onclick="approveRec('${c.key}')">OK</button>
-                    <button onclick="db.ref('requests/${c.key}').remove()" style="color:red">X</button>
-                </div>`;
-            });
         });
 
         function renderLevels() {
             const cont = document.getElementById('levelsList');
             cont.innerHTML = "";
             levels.forEach(l => {
-                let editBtn = (user && (user.role==='admin'||user.role==='mod')) ? `<button class="edit-btn" onclick="openEdit('${l.id}')">⚙️</button>` : '';
                 cont.innerHTML += `<div class="card-item" onclick="openLvl('${l.id}')">
                     <img src="${l.img}" class="level-img">
                     <div class="info"><b>#${levels.indexOf(l)+1} ${l.name}</b></div>
                     <div class="pts-badge">${l.points} PTS</div>
-                    ${editBtn}
                 </div>`;
             });
         }
@@ -204,153 +187,126 @@
                         if(r.name === u.name && r.percent == 100) pts += parseInt(l.points);
                     });
                 });
-                scores.push({name: u.name, pts, role: u.role, banned: u.banned});
+                scores.push({...u, pts});
             });
             scores.sort((a,b) => b.pts - a.pts);
             cont.innerHTML = "";
             scores.forEach((p, i) => {
-                let tag = p.banned ? `<span class="status-tag" style="background:var(--ban)">BAN</span>` : 
-                          p.role === 'admin' ? `<span class="status-tag" style="background:var(--admin)">ADMIN</span>` :
-                          p.role === 'mod' ? `<span class="status-tag" style="background:var(--mod)">MOD</span>` : '';
-                cont.innerHTML += `<div class="card-item" style="padding:10px">
-                    <div style="width:30px">#${i+1}</div>
-                    <div style="flex:1; text-align:left">${tag} <b>${p.name}</b></div>
+                const repColor = p.rep > 0 ? '#00ff00' : (p.rep < 0 ? '#ff4444' : '#fff');
+                cont.innerHTML += `<div class="card-item" onclick="openProfile('${p.name}')">
+                    <div style="width:30px; margin-left:10px;">#${i+1}</div>
+                    <img src="${p.avatar || defaultAv}" class="avatar-small">
+                    <div class="info">
+                        <b>${p.name}</b>
+                        <small style="margin-left:10px; color:${repColor}">REP: ${p.rep || 0}</small>
+                    </div>
                     <div class="pts-badge">${p.pts} PTS</div>
                 </div>`;
             });
         }
 
-        function renderUsersTable() {
-            const body = document.getElementById('usersTableBody');
-            body.innerHTML = "";
-            Object.keys(allUsers).forEach(id => {
-                const u = allUsers[id];
-                body.innerHTML += `<tr>
-                    <td>${u.name}<br><small style="color:#777">${u.pass}</small></td>
-                    <td>${u.role}</td>
-                    <td>${u.banned ? 'ЗАБАНЕН' : 'ОК'}</td>
-                    <td>
-                        <button onclick="setRole('${u.name}', 'mod')">Мод</button>
-                        <button onclick="setBan('${u.name}', ${!u.banned})">${u.banned ? 'Разбан' : 'Бан'}</button>
-                    </td>
-                </tr>`;
+        function openProfile(name) {
+            const u = allUsers[name];
+            viewingUser = name;
+            document.getElementById('pName').innerText = name;
+            document.getElementById('pAv').src = u.avatar || defaultAv;
+            const rep = u.rep || 0;
+            const repEl = document.getElementById('pRep');
+            repEl.innerText = "Репутация: " + rep;
+            repEl.style.color = rep > 0 ? '#00ff00' : (rep < 0 ? '#ff4444' : '#fff');
+            
+            let pts = 0; let recs = "";
+            levels.forEach(l => {
+                if(l.records) Object.values(l.records).forEach(r => {
+                    if(r.name === name) {
+                        if(r.percent == 100) pts += parseInt(l.points);
+                        recs += `<div>${l.name} — ${r.percent}%</div>`;
+                    }
+                });
+            });
+            document.getElementById('pStats').innerHTML = `<b>Очки: ${pts}</b><br><br>${recs || 'Нет рекордов'}`;
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function changeRep(val) {
+            if(!user) return alert("Войди в аккаунт!");
+            if(user.name === viewingUser) return alert("Нельзя менять себе!");
+            const targetRep = (allUsers[viewingUser].rep || 0) + val;
+            db.ref('users/' + viewingUser).update({ rep: targetRep });
+            openProfile(viewingUser);
+        }
+
+        function changeAvatar() {
+            const url = document.getElementById('changeAvInp').value;
+            if(!url) return;
+            db.ref('users/' + user.name).update({ avatar: url });
+            alert("Аватар обновлен!");
+        }
+
+        function changeNick() {
+            const newNick = document.getElementById('changeNickInp').value;
+            if(!newNick || allUsers[newNick]) return alert("Ник занят или пустой!");
+            const oldNick = user.name;
+            const userData = {...user, name: newNick};
+            
+            db.ref('users/' + newNick).set(userData).then(() => {
+                db.ref('users/' + oldNick).remove();
+                user = userData;
+                sessionStorage.setItem('user', JSON.stringify(user));
+                location.reload();
             });
         }
 
-        // ЛОГИКА
         function auth(mode) {
             const n = document.getElementById('loginInp').value;
             const p = document.getElementById('passInp').value;
-            if(!n || !p) return;
-
             if(mode === 'reg') {
-                db.ref('users/'+n).set({name:n, pass:p, role:'user', banned: false});
-                alert("Аккаунт создан!");
+                if(allUsers[n]) return alert("Ник занят!");
+                db.ref('users/'+n).set({name:n, pass:p, role:'user', banned:false, rep:0, avatar:defaultAv});
+                alert("Готово!");
             } else {
-                db.ref('users/'+n).once('value', s => {
-                    const data = s.val();
-                    if(data && data.pass === p) {
-                        if(n === "Smirzix" && p === ADMIN_PASS) data.role = 'admin';
-                        user = data;
-                        sessionStorage.setItem('user', JSON.stringify(user));
-                        location.reload();
-                    } else alert("Ошибка!");
-                });
+                const u = allUsers[n];
+                if(u && u.pass === p) {
+                    user = u;
+                    sessionStorage.setItem('user', JSON.stringify(user));
+                    location.reload();
+                } else alert("Неверно!");
+            }
+        }
+
+        function updateUI() {
+            if(user) {
+                document.getElementById('authBox').style.display = 'none';
+                document.getElementById('userBox').style.display = 'block';
+                document.getElementById('myNick').innerText = user.name;
+                document.getElementById('myAv').src = user.avatar || defaultAv;
+                document.getElementById('myRole').innerText = "Роль: " + user.role.toUpperCase();
+                if(user.role==='admin'||user.role==='mod') {
+                    document.getElementById('btnReq').style.display='inline-block';
+                    document.getElementById('btnEdit').style.display='inline-block';
+                    if(user.role==='admin') document.getElementById('btnUsers').style.display='inline-block';
+                }
             }
         }
 
         function openLvl(id) {
             const l = levels.find(x => x.id === id);
             document.getElementById('mTitle').innerText = l.name;
-            document.getElementById('mVideo').src = formatVid(l.video);
+            document.getElementById('mVideo').src = l.video.replace("watch?v=", "embed/");
             let rHtml = "<b>Рекорды:</b><br>";
             if(l.records) Object.values(l.records).forEach(r => {
-                rHtml += `<div>${r.name} — ${r.percent}%</div>`;
+                rHtml += `<div>${r.name}: ${r.percent}%</div>`;
             });
             document.getElementById('mRecords').innerHTML = rHtml;
             document.getElementById('lvlModal').style.display = 'flex';
         }
 
-        function openEdit(id) {
-            event.stopPropagation();
-            currentEditId = id;
-            const l = levels.find(x => x.id === id);
-            document.getElementById('editName').value = l.name;
-            document.getElementById('editPts').value = l.points;
-            document.getElementById('editModal').style.display = 'flex';
-        }
-
-        function saveEdit() {
-            db.ref('levels/'+currentEditId).update({
-                name: document.getElementById('editName').value,
-                points: parseInt(document.getElementById('editPts').value)
-            });
-            document.getElementById('editModal').style.display = 'none';
-        }
-
-        function deleteLvl() {
-            if(confirm("Удалить?")) {
-                db.ref('levels/'+currentEditId).remove();
-                document.getElementById('editModal').style.display = 'none';
-            }
-        }
-
-        function addLevel() {
-            const name = document.getElementById('newLvlName').value;
-            const img = document.getElementById('newLvlImg').value;
-            const video = document.getElementById('newLvlVid').value;
-            const points = document.getElementById('newLvlPts').value;
-            db.ref('levels').push({name, img, video, points: parseInt(points)});
-            alert("Добавлено!");
-        }
-
-        function sendRec() {
-            if(user.banned) return alert("Вы забанены!");
-            db.ref('requests').push({
-                user: user.name,
-                level: document.getElementById('recLvl').value,
-                percent: document.getElementById('recPerc').value,
-                video: document.getElementById('recVid').value
-            });
-            alert("Отправлено!");
-            document.getElementById('recModal').style.display = 'none';
-        }
-
-        function approveRec(reqId) {
-            db.ref('requests/'+reqId).once('value', s => {
-                const r = s.val();
-                const lvl = levels.find(l => l.name.toLowerCase() === r.level.toLowerCase());
-                if(lvl) {
-                    db.ref('levels/'+lvl.id+'/records').push({name: r.user, percent: r.percent, video: r.video});
-                    db.ref('requests/'+reqId).remove();
-                } else alert("Уровень не найден!");
-            });
-        }
-
-        function setRole(name, role) { db.ref('users/'+name).update({role}); }
-        function setBan(name, status) { db.ref('users/'+name).update({banned: status}); }
-
         function showPage(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
-
         function logout() { sessionStorage.clear(); location.reload(); }
-        function openRecordModal() { document.getElementById('recModal').style.display = 'flex'; }
-
-        // ИНИЦИАЛИЗАЦИЯ UI
-        if(user) {
-            document.getElementById('authBox').style.display = 'none';
-            document.getElementById('userBox').style.display = 'block';
-            document.getElementById('myNick').innerText = user.name;
-            document.getElementById('myRole').innerText = "Роль: " + user.role.toUpperCase();
-            if(user.role === 'admin' || user.role === 'mod') {
-                document.getElementById('btnReq').style.display = 'inline-block';
-                document.getElementById('btnEdit').style.display = 'inline-block';
-                if(user.role === 'admin') document.getElementById('btnUsers').style.display = 'inline-block';
-            }
-        }
+        updateUI();
     </script>
 </body>
 </html>
-       
