@@ -3,241 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nouneim List | Admin Ultimate</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <title>Технические работы | NOUNEIM-LIST</title>
     <style>
-        :root { --accent: #00ffd4; --bg: #000; --card: rgba(255, 255, 255, 0.07); --text: #fff; --admin: #ff4444; }
-        body { margin: 0; color: var(--text); font-family: sans-serif; background: #0a0a0a; min-height: 100vh; }
-        nav { display: flex; justify-content: center; gap: 10px; padding: 15px; background: #000; border-bottom: 1px solid var(--accent); position: sticky; top:0; z-index:100; }
-        button { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; cursor: pointer; border-radius: 5px; }
-        button:hover { background: var(--accent); color: #000; }
-        .page { display: none; padding: 20px; max-width: 900px; margin: auto; }
-        .active { display: block; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; color: #fff; box-sizing: border-box; }
-        
-        /* Блицкриг */
-        .node-item { background: var(--accent); color: #000; padding: 5px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; }
-        .stage-box { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid var(--accent); }
-        .locked { opacity: 0.2; pointer-events: none; }
-        .b-btn { background: #222; border: 1px solid #444; color: #fff; margin: 3px; padding: 10px; cursor: pointer; }
-        .b-btn.win { background: #28a745; border-color: #fff; }
+        :root {
+            --accent: #00ffd4;
+            --bg: #000;
+        }
 
-        /* Админка */
-        .admin-btn { border-color: var(--admin); color: var(--admin); width: 100%; margin-top: 10px; font-weight: bold; }
-        .admin-panel { background: #1a0000; border: 2px solid var(--admin); padding: 20px; border-radius: 10px; margin-top: 20px; }
-        .lvl-card-admin { display: flex; justify-content: space-between; background: #222; padding: 10px; margin-bottom: 5px; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Тот самый залипающий анимированный фон */
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #000, #0a1a1a, #000, #1a0a1a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            z-index: 1;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Контент поверх фона */
+        .content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            color: white;
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            background: linear-gradient(to right, var(--accent), #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200%;
+            animation: shine 3s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .status {
+            font-size: 1.2rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        /* Декоративный элемент "загрузки" */
+        .loader {
+            width: 50px;
+            height: 2px;
+            background: var(--accent);
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 100%;
+            background: #fff;
+            left: -20px;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { left: -20px; }
+            100% { left: 50px; }
+        }
     </style>
 </head>
 <body>
 
-<nav>
-    <button onclick="showPage('levelsPage')">Уровни</button>
-    <button onclick="showPage('playersPage')">Игроки</button>
-    <button onclick="showPage('blitzPage')">Блицкриг</button>
-    <button onclick="showPage('authPage')">Аккаунт</button>
-</nav>
+    <div class="background"></div>
 
-<div id="levelsPage" class="page active">
-    <div id="levelsList"></div>
-</div>
-
-<div id="playersPage" class="page">
-    <div id="playersList"></div>
-</div>
-
-<div id="blitzPage" class="page">
-    <h2>Твой личный Блицкриг</h2>
-    <p>Введи проценты через пробел (например: 20 40 60 80) и нажми Enter</p>
-    <input type="text" id="blitzInput" placeholder="20 40 60 80" onkeydown="if(event.key==='Enter') createBlitz()">
-    <div id="blitzVisualNodes" style="display:flex; gap:10px; margin-bottom:20px"></div>
-    <div id="blitzGame"></div>
-</div>
-
-<div id="authPage" class="page">
-    <div id="authForm">
-        <input type="text" id="logN" placeholder="Никнейм">
-        <input type="password" id="logP" placeholder="Пароль">
-        <button onclick="handleAuth('login')">Войти</button>
-        <button onclick="handleAuth('reg')">Регистрация</button>
+    <div class="content">
+        <div class="logo">NOUNEIM-LIST</div>
+        <div class="status">Ведутся технические работы</div>
+        <div class="loader"></div>
+        <p style="font-size: 0.9rem; opacity: 0.5;">Мы скоро вернемся с обновленным функционалом</p>
     </div>
 
-    <div id="profileArea" style="display:none">
-        <h2 id="myNameDisplay"></h2>
-        <button id="adminShowBtn" class="admin-btn" style="display:none" onclick="toggleAdminPanel()">ПАНЕЛЬ УПРАВЛЕНИЯ</button>
-        
-        <div id="adminPanel" class="admin-panel" style="display:none">
-            <h3>Управление Листом</h3>
-            <input type="text" id="newLvlN" placeholder="Название уровня">
-            <input type="number" id="newLvlP" placeholder="Очки (Points)">
-            <input type="text" id="newLvlV" placeholder="Ссылка на видео">
-            <input type="text" id="newLvlI" placeholder="Ссылка на скриншот">
-            <button onclick="addLevel()" style="width:100%; margin-bottom:20px">ДОБАВИТЬ УРОВЕНЬ</button>
-            <hr>
-            <h4>Список уровней (для удаления)</h4>
-            <div id="adminLvlList"></div>
-        </div>
-        
-        <button onclick="logout()" style="color:red; margin-top:20px">Выйти</button>
-    </div>
-</div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
-        databaseURL: "https://nouneimlist-default-rtdb.firebaseio.com",
-        projectId: "nouneimlist",
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let user = JSON.parse(sessionStorage.getItem('user')) || null;
-    let allUsers = {}, levels = {};
-
-    db.ref('users').on('value', s => { allUsers = s.val() || {}; renderPlayers(); if(user) { user = allUsers[user.name]; updateUI(); } });
-    db.ref('levels').on('value', s => { levels = s.val() || {}; renderLevels(); renderAdminLevels(); });
-
-    // --- АВТОРИЗАЦИЯ ---
-    function handleAuth(mode) {
-        const n = document.getElementById('logN').value.trim();
-        const p = document.getElementById('logP').value;
-        const adminPass = "Q8484Uhrjrrjj(kfvlp )f";
-
-        if(mode === 'reg') {
-            if(allUsers[n]) return alert("Ник занят");
-            let role = (p === adminPass) ? 'admin' : 'user';
-            db.ref('users/'+n).set({name:n, pass:p, rep:0, role: role, pts:0});
-            alert("Успешно!");
-        } else {
-            const u = allUsers[n];
-            if(u && u.pass === p) {
-                sessionStorage.setItem('user', JSON.stringify(u));
-                location.reload();
-            } else alert("Неверно!");
-        }
-    }
-
-    function updateUI() {
-        if(!user) return;
-        document.getElementById('authForm').style.display = 'none';
-        document.getElementById('profileArea').style.display = 'block';
-        document.getElementById('myNameDisplay').innerText = "Привет, " + user.name;
-        if(user.role === 'admin') document.getElementById('adminShowBtn').style.display = 'block';
-    }
-
-    // --- БЛИЦКРИГ (ДИНАМИЧЕСКИЙ) ---
-    function createBlitz() {
-        const val = document.getElementById('blitzInput').value;
-        const nodes = val.split(' ').map(Number).filter(n => n > 0 && n < 100).sort((a,b)=>a-b);
-        const game = document.getElementById('blitzGame');
-        game.innerHTML = "";
-        
-        const fullNodes = [0, ...nodes, 100];
-        
-        for(let s = 0; s < nodes.length; s++) {
-            const stageDiv = document.createElement('div');
-            stageDiv.className = `stage-box ${s > 0 ? 'locked' : ''}`;
-            stageDiv.id = `bs_${s}`;
-            stageDiv.innerHTML = `<h3>Стадия ${s+1} (${nodes[s]}%)</h3>`;
-            
-            // Расчет кнопок по твоей логике
-            for(let i = 0; i < fullNodes.length; i++) {
-                let start = fullNodes[i];
-                let endIdx = i + (nodes.length - s);
-                if(endIdx >= fullNodes.length) continue;
-                let end = fullNodes[endIdx];
-
-                const b = document.createElement('button');
-                b.className = 'b-btn';
-                b.innerText = `${start}% - ${end}%`;
-                b.onclick = function() {
-                    this.classList.toggle('win');
-                    checkB(s);
-                };
-                stageDiv.appendChild(b);
-            }
-            game.appendChild(stageDiv);
-        }
-    }
-
-    function checkB(s) {
-        const stage = document.getElementById(`bs_${s}`);
-        const btns = stage.querySelectorAll('.b-btn');
-        const wins = stage.querySelectorAll('.win');
-        if(btns.length === wins.length) {
-            const next = document.getElementById(`bs_${s+1}`);
-            if(next) next.classList.remove('locked');
-            else alert("УРОВЕНЬ ПРОЙДЕН!");
-        }
-    }
-
-    // --- АДМИН-ФУНКЦИИ ---
-    function toggleAdminPanel() {
-        const p = document.getElementById('adminPanel');
-        p.style.display = p.style.display === 'none' ? 'block' : 'none';
-    }
-
-    function addLevel() {
-        const name = document.getElementById('newLvlN').value;
-        const pts = document.getElementById('newLvlP').value;
-        const vid = document.getElementById('newLvlV').value;
-        const img = document.getElementById('newLvlI').value;
-        if(!name || !pts) return alert("Заполни поля!");
-        db.ref('levels/'+name).set({name, points:pts, video:vid, img:img});
-        alert("Добавлено!");
-    }
-
-    function renderAdminLevels() {
-        const cont = document.getElementById('adminLvlList');
-        cont.innerHTML = "";
-        Object.keys(levels).forEach(k => {
-            cont.innerHTML += `<div class="lvl-card-admin">${k} <button onclick="delLvl('${k}')" style="color:red; border-color:red">Удалить</button></div>`;
-        });
-    }
-    function delLvl(k) { if(confirm("Удалить?")) db.ref('levels/'+k).remove(); }
-
-    function renderLevels() {
-        const cont = document.getElementById('levelsList');
-        cont.innerHTML = "";
-        Object.values(levels).sort((a,b)=>b.points - a.points).forEach(l => {
-            cont.innerHTML += `<div style="background:var(--card); margin-bottom:10px; display:flex; align-items:center; border-radius:10px; overflow:hidden">
-                <img src="${l.img}" style="width:150px; height:80px; object-fit:cover">
-                <div style="padding:15px"><b>${l.name}</b> <br> Очки: ${l.points}</div>
-            </div>`;
-        });
-    }
-
-    function renderPlayers() {
-        const cont = document.getElementById('playersList');
-        cont.innerHTML = "<h2>Топ игроков</h2>";
-        Object.values(allUsers).sort((a,b)=> (b.rep||0) - (a.rep||0)).forEach(p => {
-            cont.innerHTML += `<div style="background:var(--card); padding:10px; margin-bottom:5px; display:flex; justify-content:space-between">
-                <span><b>${p.name}</b> (REP: ${p.rep || 0})</span>
-                ${user && user.role === 'admin' ? `<button onclick="editP('${p.name}')">Edit</button>` : `<button onclick="vote('${p.name}', 1)">+ Rep</button>`}
-            </div>`;
-        });
-    }
-
-    function vote(target, val) {
-        if(!user) return alert("Войди!");
-        const vKey = `voted/${user.name}/${target}`;
-        db.ref(vKey).once('value', s => {
-            if(s.exists()) return alert("Уже голосовал!");
-            db.ref('users/'+target+'/rep').transaction(c => (c||0) + val);
-            db.ref(vKey).set(true);
-        });
-    }
-
-    function editP(name) {
-        const nr = prompt("Новая репутация:", allUsers[name].rep);
-        if(nr !== null) db.ref('users/'+name).update({rep: Number(nr)});
-    }
-
-    function showPage(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-    function logout() { sessionStorage.clear(); location.reload(); }
-</script>
 </body>
 </html>
