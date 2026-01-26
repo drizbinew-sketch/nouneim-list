@@ -3,100 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAINTENANCE | CRITICAL</title>
+    <title>Технические работы - NOUNEIM LIST</title>
     <style>
+        /* --- ДИНАМИЧНЫЙ ФОН --- */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #000;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
         }
 
-        /* Эпилептический фон */
-        .flashing-bg {
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(
-                from 0deg, 
-                #ff0000, #00ff00, #0000ff, #ffff00, #ff00ff, #00ffff, #ff0000
-            );
-            animation: 
-                rotate 0.1s linear infinite, 
-                glitchColor 0.05s steps(1) infinite;
-            filter: contrast(200%) brightness(150%);
-            z-index: 1;
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        @keyframes rotate {
-            from { transform: rotate(0deg) scale(1); }
-            to { transform: rotate(360deg) scale(1.5); }
-        }
-
-        @keyframes glitchColor {
-            0% { filter: hue-rotate(0deg) invert(0); }
-            25% { filter: hue-rotate(90deg) invert(1); }
-            50% { filter: hue-rotate(180deg) invert(0); }
-            75% { filter: hue-rotate(270deg) invert(1); }
-            100% { filter: hue-rotate(360deg) invert(0); }
-        }
-
-        /* Контент */
-        .overlay {
-            position: relative;
-            z-index: 10;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 40px;
-            border: 5px solid #fff;
+        /* --- ЦЕНТРАЛЬНЫЙ БЛОК --- */
+        .maintenance-container {
             text-align: center;
-            box-shadow: 0 0 50px #fff;
-            transform: skew(-5deg);
-            animation: shake 0.1s infinite;
-        }
-
-        @keyframes shake {
-            0% { transform: translate(2px, 2px) skew(-5deg); }
-            50% { transform: translate(-2px, -2px) skew(5deg); }
-            100% { transform: translate(2px, 2px) skew(-5deg); }
+            color: white;
+            z-index: 10;
         }
 
         h1 {
-            color: #fff;
-            font-size: 5rem;
-            margin: 0;
+            font-size: 4rem;
             text-transform: uppercase;
-            letter-spacing: -5px;
-            line-height: 0.9;
+            letter-spacing: 5px;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
         }
 
-        p {
-            color: #ff0000;
-            font-size: 1.5rem;
+        .play-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
             font-weight: bold;
-            margin-top: 10px;
-            background: #fff;
-            display: inline-block;
-            padding: 5px 10px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+            backdrop-filter: blur(5px);
+            border-radius: 50px;
+        }
+
+        .play-btn:hover {
+            background: white;
+            color: #e73c7e;
+            transform: scale(1.1);
+        }
+
+        /* --- ОКНО ИГРЫ --- */
+        #game-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            background: #222;
+            border: 4px solid #555;
+            display: block;
+            box-shadow: 0 0 50px rgba(0,255,212,0.3);
+        }
+
+        .score-ui {
+            color: #00ffd4;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        .close-game {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <div class="flashing-bg"></div>
-
-    <div class="overlay">
-        <h1>TECH<br>WORKS</h1>
-        <p>REBUILDING THE SYSTEM</p>
+    <div class="maintenance-container">
+        <h1>Технические работы</h1>
+        <p style="font-size: 1.2rem; opacity: 0.8; margin-bottom: 30px;">Мы скоро вернемся.Передаю привет банану и Максимке</p>
+        <button class="play-btn" onclick="openGame()">Запустить GD Mini</button>
     </div>
 
+    <div id="game-modal">
+        <span class="close-game" onclick="closeGame()">&times;</span>
+        <div class="score-ui">SCORE: <span id="score-val">0</span></div>
+        <canvas id="gdCanvas"></canvas>
+        <p style="color: #777; margin-top: 15px;">Пробел или Клик — Прыжок</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gdCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score-val');
+
+        canvas.width = 800;
+        canvas.height = 300;
+
+        let score = 0;
+        let isPlaying = false;
+        let scoreInterval;
+
+        // Настройки игрока
+        const player = {
+            x: 50,
+            y: 200,
+            size: 40,
+            color: '#00ffd4',
+            dy: 0,
+            jumpForce: 12,
+            gravity: 0.6,
+            grounded: false,
+            rotation: 0
+        };
+
+        // Шипы
+        let obstacles = [];
+        let gameSpeed = 5;
+
+        function openGame() {
+            document.getElementById('game-modal').style.display = 'flex';
+            resetGame();
+            isPlaying = true;
+            scoreInterval = setInterval(() => {
+                score += 3; // +3 к рекорду каждую секунду
+                scoreEl.innerText = score;
+            }, 1000);
+            requestAnimationFrame(update);
+        }
+
+        function closeGame() {
+            document.getElementById('game-modal').style.display = 'none';
+            isPlaying = false;
+            clearInterval(scoreInterval);
+        }
+
+        function resetGame() {
+            score = 0;
+            scoreEl.innerText = "0";
+            player.y = 200;
+            player.dy = 0;
+            player.rotation = 0;
+            obstacles = [];
+            spawnObstacle();
+        }
+
+        function spawnObstacle() {
+            obstacles.push({
+                x: canvas.width + 100,
+                width: 40,
+                height: 40
+            });
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x + player.size/2, player.y + player.size/2);
+            ctx.rotate(player.rotation * Math.PI / 180);
+            
+            // Тело кубика
+            ctx.fillStyle = player.color;
+            ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+            
+            // Глаза кубика
+            ctx.fillStyle = "black";
+            ctx.fillRect(5, -15, 8, 8);
+            ctx.fillRect(5, 2, 8, 8);
+            
+            ctx.restore();
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "#ff4444";
+            obstacles.forEach(obs => {
+                ctx.beginPath();
+                ctx.moveTo(obs.x, canvas.height - 20);
+                ctx.lineTo(obs.x + obs.width / 2, canvas.height - 20 - obs.height);
+                ctx.lineTo(obs.x + obs.width, canvas.height - 20);
+                ctx.fill();
+            });
+        }
+
+        function update() {
+            if (!isPlaying) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Пол
+            ctx.fillStyle = "#444";
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 2);
+
+            // Физика игрока
+            player.dy += player.gravity;
+            player.y += player.dy;
+
+            if (player.y + player.size > canvas.height - 20) {
+                player.y = canvas.height - 20 - player.size;
+                player.dy = 0;
+                player.grounded = true;
+                // Округление вращения до 90 градусов при приземлении
+                player.rotation = Math.round(player.rotation / 90) * 90;
+            } else {
+                player.grounded = false;
+                player.rotation += 5; // Вращение в прыжке
+            }
+
+            // Препятствия
+            obstacles.forEach((obs, index) => {
+                obs.x -= gameSpeed;
+
+                // Коллизия (упрощенная)
+                if (
+                    player.x < obs.x + obs.width - 5 &&
+                    player.x + player.size > obs.x + 5 &&
+                    player.y + player.size > canvas.height - 20 - obs.height + 5
+                ) {
+                    resetGame();
+                }
+
+                if (obs.x < -100) obstacles.splice(index, 1);
+            });
+
+            if (obstacles.length === 0 || obstacles[obstacles.length-1].x < canvas.width - 300) {
+                spawnObstacle();
+            }
+
+            drawPlayer();
+            drawObstacles();
+
+            requestAnimationFrame(update);
+        }
+
+        // Прыжок
+        function handleJump() {
+            if (player.grounded) {
+                player.dy = -player.jumpForce;
+                player.grounded = false;
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') handleJump();
+        });
+
+        canvas.addEventListener('mousedown', handleJump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleJump();
+        });
+
+    </script>
 </body>
 </html>
 
