@@ -3,277 +3,715 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Технические работы - NOUNEIM LIST</title>
+    <title>NOUNEIM LIST</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        /* --- ДИНАМИЧНЫЙ ФОН --- */
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Segoe UI', sans-serif;
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --main-accent: #00ffcc; /* Циан как на фото */
+            --secondary-accent: #ff00ff; /* Розовый для заголовка */
+            --text-color: #ffffff;
+            --rank-1: #ffd700;
+            --rank-2: #c0c0c0;
+            --rank-3: #cd7f32;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        /* --- Анимации --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+
+        /* --- Шапка --- */
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--main-accent);
+            background: rgba(0,0,0,0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        h1.logo {
+            color: var(--secondary-accent);
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+
+        nav {
             display: flex;
             justify-content: center;
-            align-items: center;
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        .nav-btn {
+            background: transparent;
+            border: 2px solid var(--main-accent);
+            color: var(--text-color);
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: 0.3s;
+            border-radius: 5px;
         }
 
-        /* --- ЦЕНТРАЛЬНЫЙ БЛОК --- */
-        .maintenance-container {
-            text-align: center;
+        .nav-btn:hover, .nav-btn.active {
+            background: var(--main-accent);
+            color: #000;
+            box-shadow: 0 0 15px var(--main-accent);
+        }
+
+        /* --- Контент --- */
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* --- Фильтры и Поиск --- */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        input, select {
+            background: #222;
+            border: 1px solid var(--main-accent);
             color: white;
+            padding: 10px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input { flex-grow: 1; }
+
+        /* --- Карточки (Уровни и Игроки) --- */
+        .level-card, .player-card {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #333;
+            height: 80px;
+        }
+
+        .level-card:hover, .player-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
             z-index: 10;
         }
 
-        h1 {
-            font-size: 4rem;
+        /* Фон превью уровня */
+        .level-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.3;
+            z-index: 0;
+            transition: opacity 0.3s;
+        }
+        .level-card:hover .level-bg { opacity: 0.5; }
+
+        .rank-box {
+            width: 60px;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            z-index: 1;
+            background: rgba(0,0,0,0.5);
+        }
+
+        /* Уникальное оформление топ-3 */
+        .level-card[data-rank="1"] .rank-box { background: var(--rank-1); color: #000; box-shadow: 0 0 20px var(--rank-1); }
+        .level-card[data-rank="2"] .rank-box { background: var(--rank-2); color: #000; box-shadow: 0 0 20px var(--rank-2); }
+        .level-card[data-rank="3"] .rank-box { background: var(--rank-3); color: #000; box-shadow: 0 0 20px var(--rank-3); }
+
+        .info-box {
+            flex-grow: 1;
+            padding: 0 20px;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .level-name { font-size: 1.2rem; font-weight: 700; }
+        .level-difficulty { 
+            font-weight: bold; 
             text-transform: uppercase;
-            letter-spacing: 5px;
-            text-shadow: 0 0 20px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 5px;
         }
 
-        .play-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid white;
-            color: white;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: 0.3s;
-            backdrop-filter: blur(5px);
-            border-radius: 50px;
+        /* --- Игроки --- */
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 15px;
+            z-index: 1;
+            border: 2px solid var(--main-accent);
         }
 
-        .play-btn:hover {
-            background: white;
-            color: #e73c7e;
-            transform: scale(1.1);
-        }
-
-        /* --- ОКНО ИГРЫ --- */
-        #game-modal {
+        /* --- Модальные окна --- */
+        .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9);
-            z-index: 100;
-            flex-direction: column;
+            z-index: 1000;
             justify-content: center;
             align-items: center;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 10px;
+            border: 1px solid var(--main-accent);
+            text-align: center;
+            position: relative;
+            animation: fadeIn 0.3s;
         }
 
-        canvas {
-            background: #222;
-            border: 4px solid #555;
-            display: block;
-            box-shadow: 0 0 50px rgba(0,255,212,0.3);
-        }
-
-        .score-ui {
-            color: #00ffd4;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-family: monospace;
-        }
-
-        .close-game {
+        .close-modal {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            color: white;
-            font-size: 30px;
+            top: 10px; right: 15px;
+            font-size: 2rem;
             cursor: pointer;
+            color: var(--secondary-accent);
         }
+
+        .video-container {
+            margin: 20px 0;
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        .btn-action {
+            background: #333;
+            color: white;
+            border: 1px solid white;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-action:hover { background: #555; }
+        
+        .admin-panel { border: 1px solid red; padding: 10px; margin-top: 20px; display: none; }
+        .history-item { border-bottom: 1px solid #444; padding: 10px; text-align: left; }
+
+        /* --- Аккаунт --- */
+        .auth-box {
+            max-width: 400px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        .auth-box input { width: 100%; margin-bottom: 10px; }
+        .auth-box button { width: 100%; background: var(--main-accent); color: black; font-weight: bold; border: none; padding: 12px; cursor: pointer; }
+
+        .profile-header {
+            text-align: center;
+            padding: 20px;
+            background: #222;
+            border-radius: 10px;
+        }
+        .profile-header img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--main-accent); }
+        
+        /* Цвета сложностей (для фона игроков) */
+        .bg-extreme { background: linear-gradient(90deg, #1a1a1a 0%, #4a0000 100%); }
+        .bg-insane { background: linear-gradient(90deg, #1a1a1a 0%, #4a004a 100%); }
+        .bg-hard { background: linear-gradient(90deg, #1a1a1a 0%, #4a0000 100%); } /* Пример */
+        
+        .chat-box {
+            height: 200px;
+            background: #111;
+            border: 1px solid #333;
+            overflow-y: scroll;
+            margin-top: 10px;
+            padding: 10px;
+            text-align: left;
+        }
+        .msg { font-size: 0.9rem; margin-bottom: 5px; }
+
     </style>
 </head>
 <body>
 
-    <div class="maintenance-container">
-        <h1>Технические работы</h1>
-        <p style="font-size: 1.2rem; opacity: 0.8; margin-bottom: 30px;">Мы скоро вернемся.Передаю привет банану и Максимке</p>
-        <button class="play-btn" onclick="openGame()">Запустить GD Mini</button>
+    <header>
+        <h1 class="logo">NOUNEIM LIST</h1>
+        <nav>
+            <button class="nav-btn active" onclick="app.switchTab('levels')">Уровни</button>
+            <button class="nav-btn" onclick="app.switchTab('players')">Игроки</button>
+            <button class="nav-btn" onclick="app.switchTab('submit')">Отправить</button>
+            <button class="nav-btn" onclick="app.switchTab('account')">Аккаунт</button>
+            <button class="nav-btn" id="nav-requests" style="display:none; border-color: red; color: red;" onclick="app.switchTab('requests')">Реквесты</button>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <div id="tab-levels" class="tab-content active">
+            <div class="controls">
+                <button id="btn-create-level" class="nav-btn" style="display:none; border-color:red;" onclick="app.openCreateLevel()">+ Создать</button>
+                <select id="sort-levels" onchange="app.renderLevels()">
+                    <option value="points">По баллам</option>
+                    <option value="diff">По сложности</option>
+                </select>
+                <input type="text" id="search-levels" placeholder="Поиск уровня..." oninput="app.renderLevels()">
+            </div>
+            <div id="levels-container">
+                </div>
+        </div>
+
+        <div id="tab-players" class="tab-content">
+            <div class="controls">
+                <select id="sort-players">
+                    <option value="points">Баллы</option>
+                    <option value="reputation">Репутация</option>
+                </select>
+                <input type="text" id="search-players" placeholder="Поиск игрока...">
+            </div>
+            <div id="players-container"></div>
+        </div>
+
+        <div id="tab-submit" class="tab-content">
+            <div class="modal-content" style="margin: 0 auto;">
+                <h2>Отправить рекорд</h2>
+                <br>
+                <select id="submit-level-list" style="width:100%; margin-bottom:10px;"></select>
+                <button class="btn-action" onclick="document.getElementById('new-level-wrap').style.display='block'">Предложить новый уровень</button>
+                
+                <div id="new-level-wrap" style="display:none; border:1px solid #444; padding:10px; margin:10px 0;">
+                    <input type="text" id="req-new-name" placeholder="Название уровня">
+                    <select id="req-diff">
+                        <option value="Extreme Demon">Extreme Demon</option>
+                        <option value="Insane Demon">Insane Demon</option>
+                        <option value="Hard Demon">Hard Demon</option>
+                    </select>
+                </div>
+
+                <input type="number" id="req-progress" placeholder="Прогресс (100%)" value="100">
+                <input type="text" id="req-video" placeholder="Ссылка на YouTube">
+                <textarea id="req-comment" placeholder="Комментарий" style="width:100%; background:#222; color:white; padding:10px;"></textarea>
+                <br><br>
+                <button class="nav-btn" onclick="app.submitRequest()">ОТПРАВИТЬ</button>
+            </div>
+        </div>
+
+        <div id="tab-account" class="tab-content">
+            <div id="auth-forms" class="auth-box">
+                <h2 style="color:var(--main-accent)">Вход / Регистрация</h2><br>
+                <input type="email" id="auth-email" placeholder="Email">
+                <input type="password" id="auth-pass" placeholder="Пароль">
+                <button onclick="app.login()">ВОЙТИ</button>
+                <button onclick="app.register()" style="margin-top:10px; background: transparent; color:white; border:1px solid white;">РЕГИСТРАЦИЯ</button>
+                <p style="margin-top:10px; font-size:0.8rem; color:#888;">Пароль админа: 423frwefsuio</p>
+            </div>
+
+            <div id="user-profile" style="display:none;">
+                <div class="profile-header">
+                    <img id="my-avatar" src="https://via.placeholder.com/100" alt="Ava">
+                    <h2 id="my-name">User</h2>
+                    <p style="color:var(--main-accent)">Баллы: <span id="my-pts">0</span></p>
+                    <div id="admin-badge" style="color:red; display:none; font-weight:bold;">ADMIN</div>
+                </div>
+                
+                <div class="controls" style="flex-direction: column;">
+                    <input type="text" id="new-avatar-url" placeholder="URL новой аватарки (png)">
+                    <button class="btn-action" onclick="app.updateAvatar()">Сменить аватар</button>
+                    <button class="btn-action" onclick="app.logout()" style="border-color: red; color: red;">ВЫЙТИ</button>
+                </div>
+                
+                <h3>Чат (Уведомления)</h3>
+                <div id="my-chat" class="chat-box"></div>
+            </div>
+        </div>
+
+        <div id="tab-requests" class="tab-content">
+            <h2>Заявки</h2>
+            <div id="requests-list"></div>
+        </div>
+
     </div>
 
-    <div id="game-modal">
-        <span class="close-game" onclick="closeGame()">&times;</span>
-        <div class="score-ui">SCORE: <span id="score-val">0</span></div>
-        <canvas id="gdCanvas"></canvas>
-        <p style="color: #777; margin-top: 15px;">Пробел или Клик — Прыжок</p>
+    <div id="level-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="app.closeModal('level-modal')">&times;</span>
+            <h2 id="m-lvl-name">Level Name</h2>
+            <p id="m-lvl-creator" style="color:#aaa;">by Creator</p>
+            <div class="video-container">
+                <iframe id="m-lvl-video" src="" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <button class="btn-action" onclick="app.copyID()">Скопировать ID: <span id="m-lvl-id"></span></button>
+            
+            <button class="btn-action" onclick="document.getElementById('history-box').style.display='block'">История позиций</button>
+            <div id="history-box" style="display:none; background:#222; padding:10px; margin-bottom:10px;">
+                <div class="history-item">Поставлен на 1 место (20.05.2024)</div>
+            </div>
+
+            <h3>Рекорды</h3>
+            <div id="m-lvl-records" style="text-align:left; margin-top:10px;"></div>
+
+            <div id="lvl-admin-panel" class="admin-panel">
+                <button class="btn-action" style="color:red" onclick="app.deleteLevel()">Удалить уровень</button>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('gdCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score-val');
+    <div id="player-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="app.closeModal('player-modal')">&times;</span>
+            <img id="p-avatar" src="" style="width:80px; height:80px; border-radius:50%;">
+            <h2 id="p-name">Name</h2>
+            <p>Баллы: <span id="p-pts">0</span></p>
+            
+            <div style="margin: 10px 0; border:1px solid #444; padding:10px;">
+                Репутация: <span id="p-rep">0</span>
+                <br>
+                <button onclick="app.changeRep(1)">+</button>
+                <button onclick="app.changeRep(-1)">-</button>
+            </div>
 
-        canvas.width = 800;
-        canvas.height = 300;
+            <div id="p-records-list">
+                <button class="btn-action" onclick="alert('Список Extreme демонов...')">Extreme Demons (2)</button>
+            </div>
 
-        let score = 0;
-        let isPlaying = false;
-        let scoreInterval;
+            <h3>Написать сообщение</h3>
+            <input type="text" id="chat-msg" placeholder="Привет...">
+            <button class="btn-action" onclick="app.sendMessage()">Отправить</button>
 
-        // Настройки игрока
-        const player = {
-            x: 50,
-            y: 200,
-            size: 40,
-            color: '#00ffd4',
-            dy: 0,
-            jumpForce: 12,
-            gravity: 0.6,
-            grounded: false,
-            rotation: 0
+             <div id="player-admin-panel" class="admin-panel">
+                <button class="btn-action" onclick="app.banUser()">Забанить</button>
+                <button class="btn-action" onclick="app.resetRep()">Сбросить репутацию</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-level-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="app.closeModal('create-level-modal')">&times;</span>
+            <h2>Добавить Уровень</h2>
+            <input type="text" id="c-name" placeholder="Название">
+            <input type="text" id="c-creator" placeholder="Создатель">
+            <input type="text" id="c-id" placeholder="ID уровня">
+            <input type="text" id="c-video" placeholder="Video ID (Youtube)">
+            <input type="text" id="c-preview" placeholder="Ссылка на картинку превью">
+            <input type="number" id="c-points" placeholder="Баллы">
+            <select id="c-diff">
+                <option value="Extreme Demon">Extreme Demon</option>
+                <option value="Insane Demon">Insane Demon</option>
+                <option value="Hard Demon">Hard Demon</option>
+            </select>
+            <button class="nav-btn" onclick="app.createLevel()">СОЗДАТЬ</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
+            authDomain: "nouneimlist.firebaseapp.com",
+            databaseURL: "https://nouneimlist-default-rtdb.firebaseio.com",
+            projectId: "nouneimlist",
+            storageBucket: "nouneimlist.firebasestorage.app",
+            messagingSenderId: "871712258235",
+            appId: "1:871712258235:web:982874240dd587d749119e"
         };
 
-        // Шипы
-        let obstacles = [];
-        let gameSpeed = 5;
+        const appInstance = initializeApp(firebaseConfig);
+        const db = getDatabase(appInstance);
+        const auth = getAuth(appInstance);
 
-        function openGame() {
-            document.getElementById('game-modal').style.display = 'flex';
-            resetGame();
-            isPlaying = true;
-            scoreInterval = setInterval(() => {
-                score += 3; // +3 к рекорду каждую секунду
-                scoreEl.innerText = score;
-            }, 1000);
-            requestAnimationFrame(update);
-        }
+        let currentUser = null;
+        let userData = null;
+        let currentLevelId = null;
+        let currentPlayerId = null;
 
-        function closeGame() {
-            document.getElementById('game-modal').style.display = 'none';
-            isPlaying = false;
-            clearInterval(scoreInterval);
-        }
-
-        function resetGame() {
-            score = 0;
-            scoreEl.innerText = "0";
-            player.y = 200;
-            player.dy = 0;
-            player.rotation = 0;
-            obstacles = [];
-            spawnObstacle();
-        }
-
-        function spawnObstacle() {
-            obstacles.push({
-                x: canvas.width + 100,
-                width: 40,
-                height: 40
-            });
-        }
-
-        function drawPlayer() {
-            ctx.save();
-            ctx.translate(player.x + player.size/2, player.y + player.size/2);
-            ctx.rotate(player.rotation * Math.PI / 180);
+        // Глобальный объект приложения для доступа из HTML
+        window.app = {
             
-            // Тело кубика
-            ctx.fillStyle = player.color;
-            ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
-            
-            // Глаза кубика
-            ctx.fillStyle = "black";
-            ctx.fillRect(5, -15, 8, 8);
-            ctx.fillRect(5, 2, 8, 8);
-            
-            ctx.restore();
-        }
+            // --- НАВИГАЦИЯ ---
+            switchTab: (tabId) => {
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                document.getElementById('tab-' + tabId).classList.add('active');
+                document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+                // Обновление активной кнопки
+                event.target.classList.add('active');
+            },
 
-        function drawObstacles() {
-            ctx.fillStyle = "#ff4444";
-            obstacles.forEach(obs => {
-                ctx.beginPath();
-                ctx.moveTo(obs.x, canvas.height - 20);
-                ctx.lineTo(obs.x + obs.width / 2, canvas.height - 20 - obs.height);
-                ctx.lineTo(obs.x + obs.width, canvas.height - 20);
-                ctx.fill();
-            });
-        }
+            closeModal: (id) => document.getElementById(id).style.display = 'none',
+            openCreateLevel: () => document.getElementById('create-level-modal').style.display = 'flex',
 
-        function update() {
-            if (!isPlaying) return;
+            // --- AUTH ---
+            login: () => {
+                const email = document.getElementById('auth-email').value;
+                const pass = document.getElementById('auth-pass').value;
+                signInWithEmailAndPassword(auth, email, pass).catch(e => alert(e.message));
+            },
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            register: () => {
+                const email = document.getElementById('auth-email').value;
+                const pass = document.getElementById('auth-pass').value;
+                
+                createUserWithEmailAndPassword(auth, email, pass).then((cred) => {
+                    const isAdmin = (pass === '423frwefsuio'); // Секретный код
+                    const newUser = {
+                        email: email,
+                        name: email.split('@')[0],
+                        role: isAdmin ? 'admin' : 'user',
+                        points: 0,
+                        reputation: 0,
+                        avatar: 'https://via.placeholder.com/100',
+                        hardest: 'Hard Demon'
+                    };
+                    set(ref(db, 'users/' + cred.user.uid), newUser);
+                }).catch(e => alert(e.message));
+            },
 
-            // Пол
-            ctx.fillStyle = "#444";
-            ctx.fillRect(0, canvas.height - 20, canvas.width, 2);
+            logout: () => signOut(auth),
 
-            // Физика игрока
-            player.dy += player.gravity;
-            player.y += player.dy;
+            updateAvatar: () => {
+                const url = document.getElementById('new-avatar-url').value;
+                if(url && currentUser) {
+                    update(ref(db, 'users/' + currentUser.uid), { avatar: url });
+                }
+            },
 
-            if (player.y + player.size > canvas.height - 20) {
-                player.y = canvas.height - 20 - player.size;
-                player.dy = 0;
-                player.grounded = true;
-                // Округление вращения до 90 градусов при приземлении
-                player.rotation = Math.round(player.rotation / 90) * 90;
-            } else {
-                player.grounded = false;
-                player.rotation += 5; // Вращение в прыжке
-            }
+            // --- УРОВНИ ---
+            createLevel: () => {
+                const newLvl = {
+                    name: document.getElementById('c-name').value,
+                    creator: document.getElementById('c-creator').value,
+                    id: document.getElementById('c-id').value,
+                    video: document.getElementById('c-video').value,
+                    preview: document.getElementById('c-preview').value,
+                    points: parseInt(document.getElementById('c-points').value),
+                    difficulty: document.getElementById('c-diff').value,
+                    records: {}
+                };
+                push(ref(db, 'levels'), newLvl);
+                document.getElementById('create-level-modal').style.display = 'none';
+            },
 
-            // Препятствия
-            obstacles.forEach((obs, index) => {
-                obs.x -= gameSpeed;
+            renderLevels: () => {
+                const search = document.getElementById('search-levels').value.toLowerCase();
+                const sort = document.getElementById('sort-levels').value;
+                
+                onValue(ref(db, 'levels'), (snapshot) => {
+                    const data = snapshot.val();
+                    const container = document.getElementById('levels-container');
+                    const select = document.getElementById('submit-level-list');
+                    container.innerHTML = '';
+                    select.innerHTML = '';
 
-                // Коллизия (упрощенная)
-                if (
-                    player.x < obs.x + obs.width - 5 &&
-                    player.x + player.size > obs.x + 5 &&
-                    player.y + player.size > canvas.height - 20 - obs.height + 5
-                ) {
-                    resetGame();
+                    if (!data) return;
+
+                    let levels = Object.entries(data).map(([key, val]) => ({key, ...val}));
+
+                    // Сортировка
+                    if(sort === 'points') levels.sort((a,b) => b.points - a.points);
+                    // Простейшая сортировка по сложности (можно усложнить)
+                    
+                    levels.forEach((lvl, index) => {
+                        if(lvl.name.toLowerCase().includes(search)) {
+                            // Для выпадающего списка
+                            select.innerHTML += `<option value="${lvl.key}">${lvl.name}</option>`;
+
+                            // Карточка
+                            const rank = index + 1;
+                            const div = document.createElement('div');
+                            div.className = 'level-card fade-in';
+                            div.setAttribute('data-rank', rank);
+                            div.onclick = () => app.openLevelModal(lvl, rank);
+                            
+                            // Фон превью
+                            const bgStyle = lvl.preview ? `background-image: url(${lvl.preview});` : 'background-color: #333;';
+
+                            div.innerHTML = `
+                                <div class="level-bg" style="${bgStyle}"></div>
+                                <div class="rank-box">#${rank}</div>
+                                <div class="info-box">
+                                    <div class="level-name">${lvl.name}</div>
+                                    <div class="level-difficulty">${lvl.difficulty}</div>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        }
+                    });
+                });
+            },
+
+            openLevelModal: (lvl, rank) => {
+                currentLevelId = lvl.key;
+                const modal = document.getElementById('level-modal');
+                document.getElementById('m-lvl-name').innerText = lvl.name;
+                document.getElementById('m-lvl-creator').innerText = "by " + lvl.creator;
+                document.getElementById('m-lvl-id').innerText = lvl.id;
+                // Youtube embed
+                let videoId = lvl.video;
+                if(videoId.includes('v=')) videoId = videoId.split('v=')[1];
+                document.getElementById('m-lvl-video').src = `https://www.youtube.com/embed/${videoId}`;
+                
+                // Кнопки админа
+                if(userData && userData.role === 'admin') {
+                    document.getElementById('lvl-admin-panel').style.display = 'block';
+                } else {
+                    document.getElementById('lvl-admin-panel').style.display = 'none';
                 }
 
-                if (obs.x < -100) obstacles.splice(index, 1);
+                modal.style.display = 'flex';
+            },
+
+            copyID: () => {
+                const text = document.getElementById('m-lvl-id').innerText;
+                navigator.clipboard.writeText(text);
+                alert("ID скопирован!");
+            },
+
+            deleteLevel: () => {
+                if(confirm('Удалить уровень?')) {
+                    remove(ref(db, 'levels/' + currentLevelId));
+                    app.closeModal('level-modal');
+                }
+            },
+
+            // --- ЗАЯВКИ И ОТПРАВКА ---
+            submitRequest: () => {
+                if(!currentUser) return alert("Войдите в аккаунт!");
+                
+                const isNew = document.getElementById('new-level-wrap').style.display === 'block';
+                const req = {
+                    userId: currentUser.uid,
+                    userName: userData.name,
+                    levelId: document.getElementById('submit-level-list').value,
+                    levelName: isNew ? document.getElementById('req-new-name').value : "",
+                    progress: document.getElementById('req-progress').value,
+                    video: document.getElementById('req-video').value,
+                    status: 'pending'
+                };
+                push(ref(db, 'requests'), req);
+                alert("Отправлено на проверку!");
+            },
+
+            // --- ИГРОКИ И АДМИНКА ---
+            // Упрощенная логика рендеринга игроков
+            // В реальном проекте нужно больше проверок
+        };
+
+        // --- Firebase Listeners ---
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const authBox = document.getElementById('auth-forms');
+            const profileBox = document.getElementById('user-profile');
+            const adminBtns = document.querySelectorAll('#nav-requests, #btn-create-level, .admin-only');
+
+            if (user) {
+                authBox.style.display = 'none';
+                profileBox.style.display = 'block';
+                
+                onValue(ref(db, 'users/' + user.uid), (snap) => {
+                    userData = snap.val();
+                    document.getElementById('my-name').innerText = userData.name;
+                    document.getElementById('my-pts').innerText = userData.points;
+                    document.getElementById('my-avatar').src = userData.avatar || 'https://via.placeholder.com/100';
+                    
+                    if(userData.role === 'admin') {
+                        document.getElementById('admin-badge').style.display = 'block';
+                        document.getElementById('nav-requests').style.display = 'block';
+                        document.getElementById('btn-create-level').style.display = 'block';
+                        loadRequests();
+                    }
+                });
+            } else {
+                authBox.style.display = 'block';
+                profileBox.style.display = 'none';
+                document.getElementById('nav-requests').style.display = 'none';
+            }
+        });
+
+        function loadRequests() {
+            onValue(ref(db, 'requests'), (snap) => {
+                const list = document.getElementById('requests-list');
+                list.innerHTML = '';
+                const data = snap.val();
+                if(!data) return;
+                
+                Object.entries(data).forEach(([key, req]) => {
+                    const div = document.createElement('div');
+                    div.style.border = '1px solid #444';
+                    div.style.padding = '10px';
+                    div.style.marginBottom = '10px';
+                    div.innerHTML = `
+                        <p>Игрок: ${req.userName}</p>
+                        <p>Видео: <a href="${req.video}" target="_blank">Ссылка</a></p>
+                        <p>Прогресс: ${req.progress}%</p>
+                        <button onclick="acceptReq('${key}')" style="color:green">Принять</button>
+                        <button onclick="rejectReq('${key}')" style="color:red">Отклонить</button>
+                    `;
+                    list.appendChild(div);
+                });
             });
-
-            if (obstacles.length === 0 || obstacles[obstacles.length-1].x < canvas.width - 300) {
-                spawnObstacle();
-            }
-
-            drawPlayer();
-            drawObstacles();
-
-            requestAnimationFrame(update);
         }
 
-        // Прыжок
-        function handleJump() {
-            if (player.grounded) {
-                player.dy = -player.jumpForce;
-                player.grounded = false;
-            }
-        }
+        // Глобальные функции для кнопок в HTML (из-за type=module)
+        window.acceptReq = (key) => {
+            remove(ref(db, 'requests/' + key));
+            alert("Принято (логика начисления баллов должна быть здесь)");
+        };
+        window.rejectReq = (key) => remove(ref(db, 'requests/' + key));
 
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') handleJump();
-        });
-
-        canvas.addEventListener('mousedown', handleJump);
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            handleJump();
-        });
-
+        // Инициализация
+        app.renderLevels();
     </script>
 </body>
 </html>
