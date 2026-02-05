@@ -2,510 +2,543 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOUNEIM LIST</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>ULTIMATE CHESS</title>
     <style>
-        :root {
-            --bg: #0b0b0b;
-            --accent: #00ffcc;
-            --secondary: #ff00ff;
-            --card: #151515;
-            --rank1: #ffd700; --rank2: #c0c0c0; --rank3: #cd7f32;
+        body {
+            margin: 0; background: #222; font-family: 'Segoe UI', sans-serif;
+            display: flex; justify-content: center; align-items: center; height: 100vh;
+            color: white; user-select: none; overflow: hidden;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
-        body { background: var(--bg); color: white; overflow-x: hidden; }
-
-        /* Анимация заголовка */
-        @keyframes rainbow {
-            0% { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
-            50% { color: var(--secondary); text-shadow: 0 0 10px var(--secondary); }
-            100% { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
+        /* --- МЕНЮ --- */
+        #menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(30, 30, 30, 0.98); z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-
-        header {
-            text-align: center;
-            padding: 30px 10px;
-            background: rgba(0,0,0,0.8);
-            border-bottom: 2px solid var(--accent);
-            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
-        }
-
-        .logo {
-            font-size: 2.5rem; font-weight: 900;
-            animation: rainbow 3s infinite alternate;
-            text-transform: uppercase; letter-spacing: 5px;
-            cursor: default;
-        }
-
-        nav { display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-        .nav-btn {
-            background: transparent; border: 1px solid var(--accent);
-            color: white; padding: 8px 20px; cursor: pointer;
-            border-radius: 5px; transition: 0.3s; font-weight: bold;
-        }
-        .nav-btn:hover, .nav-btn.active { background: var(--accent); color: black; box-shadow: 0 0 15px var(--accent); }
-
-        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; min-height: 80vh; }
-        .tab { display: none; animation: fadeIn 0.5s ease; }
-        .tab.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Карточки уровней */
-        .lvl-item {
-            display: flex; align-items: center; background: var(--card);
-            margin-bottom: 12px; height: 85px; border-radius: 10px;
-            overflow: hidden; border: 1px solid #333; cursor: pointer;
-            position: relative; transition: 0.3s;
-        }
-        .lvl-item:hover { transform: scale(1.02); border-color: var(--accent); }
-        .lvl-bg {
-            position: absolute; width: 100%; height: 100%;
-            background-size: cover; background-position: center;
-            opacity: 0.25; z-index: 1;
-        }
-        .lvl-rank {
-            width: 70px; height: 100%; display: flex; justify-content: center;
-            align-items: center; font-size: 1.8rem; font-weight: 900;
-            z-index: 2; background: rgba(0,0,0,0.5);
-        }
-        .lvl-rank.r1 { color: var(--rank1); }
-        .lvl-rank.r2 { color: var(--rank2); }
-        .lvl-rank.r3 { color: var(--rank3); }
-
-        .lvl-info { flex-grow: 1; padding: 0 20px; z-index: 2; display: flex; justify-content: space-between; align-items: center; }
-        .lvl-diff { font-weight: bold; padding: 5px 10px; background: rgba(0,0,0,0.7); border-radius: 5px; font-size: 0.8rem; border: 1px solid var(--accent); }
-
-        /* Модалки */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: #1a1a1a; padding: 30px; width: 90%; max-width: 600px;
-            border-radius: 15px; border: 1px solid var(--accent); position: relative; max-height: 90vh; overflow-y: auto;
-        }
-        .close { position: absolute; top: 10px; right: 20px; font-size: 2rem; cursor: pointer; color: var(--secondary); }
-
-        .video-box { margin: 15px 0; background: #000; border-radius: 10px; overflow: hidden; position: relative; padding-bottom: 56.25%; height: 0; }
-        .video-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-
-        input, select, textarea {
-            width: 100%; padding: 12px; margin: 10px 0; background: #222;
-            border: 1px solid #444; color: white; border-radius: 8px;
-        }
-
-        .btn-green { background: var(--accent); color: black; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%; }
+        h1 { font-size: 50px; margin: 0 0 20px 0; color: #f1c40f; letter-spacing: 5px; text-transform: uppercase; }
         
-        /* Игроки */
-        .player-item {
-            display: flex; align-items: center; padding: 10px; background: #1a1a1a;
-            margin-bottom: 8px; border-radius: 50px; border: 1px solid #333; cursor: pointer;
+        .settings-box {
+            background: #333; padding: 20px; border-radius: 10px; width: 300px;
+            display: flex; flex-direction: column; gap: 15px; border: 1px solid #555;
         }
-        .p-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); margin-right: 15px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; }
+        label { font-size: 16px; cursor: pointer; }
+        input[type="checkbox"] { transform: scale(1.5); cursor: pointer; }
+        input[type="range"] { width: 100px; cursor: pointer; }
 
-        /* Секретка */
-        .secret-btn {
-            position: fixed; bottom: 0; right: 0; width: 20px; height: 20px;
-            background: transparent; border: none; cursor: default; z-index: 9999;
+        .btn-start {
+            margin-top: 20px; padding: 15px 40px; font-size: 22px; 
+            background: #27ae60; color: white; border: none; border-radius: 5px;
+            cursor: pointer; transition: 0.2s; font-weight: bold; width: 100%;
+        }
+        .btn-start:hover { background: #2ecc71; transform: scale(1.02); }
+
+        /* --- ИГРА --- */
+        #game-area { display: none; flex-direction: column; align-items: center; width: 100%; height: 100%; }
+        
+        .chessboard {
+            display: grid; 
+            /* Grid template задается через JS */
+            border: 5px solid #555; margin-top: 10px;
+            background: #111;
         }
 
-        .history-line { border-left: 2px solid var(--accent); padding-left: 10px; margin: 10px 0; font-size: 0.9rem; color: #aaa; text-align: left; }
+        .cell {
+            display: flex; justify-content: center; align-items: center;
+            font-size: 35px; cursor: pointer; position: relative;
+        }
+        /* Адаптивный размер шрифта */
+        .cell.small-font { font-size: 20px !important; }
+
+        .white-cell { background-color: #cfd8dc; color: black; }
+        .black-cell { background-color: #546e7a; color: white; }
+        
+        .selected { background-color: #f39c12 !important; }
+        .last-move { background-color: #f1c40f !important; opacity: 0.8; }
+        
+        .dot {
+            width: 30%; height: 30%; background: rgba(0,0,0,0.3);
+            border-radius: 50%; position: absolute; pointer-events: none;
+        }
+        .capture-ring {
+            width: 80%; height: 80%; border: 3px solid rgba(192, 57, 43, 0.7);
+            border-radius: 50%; position: absolute; pointer-events: none;
+        }
+
+        /* Индикатор жизней */
+        .hp-indicator {
+            position: absolute; bottom: 2px; right: 2px;
+            font-size: 10px; background: red; color: white;
+            padding: 1px 3px; border-radius: 3px; line-height: 1;
+        }
+
+        #ui-panel {
+            margin-top: 10px; display: flex; gap: 20px; align-items: center;
+            background: #333; padding: 10px 20px; border-radius: 8px;
+        }
+        .turn-indicator { font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">NOUNEIM LIST</div>
-    <nav>
-        <button class="nav-btn active" onclick="showTab('levels')">УРОВНИ</button>
-        <button class="nav-btn" onclick="showTab('players')">ИГРОКИ</button>
-        <button class="nav-btn" onclick="showTab('submit')">ОТПРАВИТЬ</button>
-        <button class="nav-btn" onclick="showTab('account')">АККАУНТ</button>
-        <button class="nav-btn" id="admin-tab" style="display:none; border-color: red;" onclick="showTab('requests')">РЕКВЕСТЫ</button>
-    </nav>
-</header>
-
-<div class="container">
-    <div id="levels" class="tab active">
-        <div style="display:flex; gap:10px; margin-bottom: 20px;">
-            <select id="sort-diff" style="width:150px;" onchange="renderLevels()">
-                <option value="all">Все</option>
-                <option value="Extreme Demon">Extreme</option>
-                <option value="Insane Demon">Insane</option>
-            </select>
-            <input type="text" id="search-lvl" placeholder="Поиск уровня..." oninput="renderLevels()">
+<div id="menu">
+    <h1>Шахматы 2.0</h1>
+    <div class="settings-box">
+        <div class="setting-row">
+            <label for="opt-king">☠️ Смерть Короля = Конец</label>
+            <input type="checkbox" id="opt-king" checked>
         </div>
-        <div id="levels-list"></div>
-        <button id="add-lvl-btn" class="btn-green" style="display:none; margin-top:20px;" onclick="openModal('modal-add-lvl')">ДОБАВИТЬ УРОВЕНЬ</button>
-    </div>
-
-    <div id="players" class="tab">
-        <input type="text" id="search-p" placeholder="Найти игрока..." oninput="renderPlayers()">
-        <div id="players-list" style="margin-top:20px;"></div>
-    </div>
-
-    <div id="submit" class="tab">
-        <div class="modal-content" style="margin:auto;">
-            <h2>Отправить рекорд</h2>
-            <select id="sub-lvl-select"></select>
-            <input type="number" id="sub-percent" placeholder="Прогресс (%)">
-            <input type="text" id="sub-video" placeholder="Ссылка на видео (YouTube)">
-            <button class="btn-green" onclick="submitRecord()">ОТПРАВИТЬ</button>
+        <div class="setting-row">
+            <label for="opt-board">🌍 Большая доска (16x16)</label>
+            <input type="checkbox" id="opt-board">
         </div>
-    </div>
-
-    <div id="account" class="tab">
-        <div id="auth-box">
-            <input type="text" id="log-user" placeholder="Логин">
-            <input type="password" id="log-pass" placeholder="Пароль">
-            <button class="btn-green" onclick="authAction('login')">ВОЙТИ</button>
-            <button class="btn-green" style="background:none; color:white; border:1px solid #444; margin-top:10px;" onclick="authAction('reg')">РЕГИСТРАЦИЯ</button>
+        <div class="setting-row">
+            <label for="opt-special">🦄 Особые фигуры</label>
+            <input type="checkbox" id="opt-special">
         </div>
-        <div id="profile-box" style="display:none; text-align:center;">
-            <img id="my-ava" src="" class="p-avatar" style="width:100px; height:100px; margin:0 auto 15px;">
-            <h2 id="my-name">User</h2>
-            <p>Баллы: <span id="my-pts">0</span></p>
-            <hr style="margin:20px 0; opacity:0.1;">
-            <input type="text" id="new-ava" placeholder="Ссылка на новую аватарку (PNG)">
-            <button class="btn-green" onclick="updateAva()">СМЕНИТЬ АВАТАР</button>
-            <button class="btn-green" style="background:red; margin-top:10px;" onclick="logout()">ВЫЙТИ</button>
+        <div class="setting-row">
+            <label>🧠 Интеллект ИИ: <span id="ai-val">5</span></label>
+            <input type="range" id="opt-ai" min="1" max="10" value="5" oninput="document.getElementById('ai-val').innerText=this.value">
         </div>
-    </div>
-
-    <div id="requests" class="tab">
-        <h2>Новые рекорды</h2>
-        <div id="req-list"></div>
+        <button class="btn-start" onclick="initGame('w')">ИГРАТЬ (Белые)</button>
+        <button class="btn-start" style="background:#8e44ad" onclick="initGame('b')">ИГРАТЬ (Черные)</button>
     </div>
 </div>
 
-<div id="modal-lvl" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-lvl')">&times;</span>
-        <h1 id="m-name">Level Name</h1>
-        <p id="m-by">by Creator</p>
-        <div class="video-box"><iframe id="m-video" frameborder="0" allowfullscreen></iframe></div>
-        <button class="btn-green" id="m-id-btn" onclick="copyID()">ID: 000000</button>
-        <button class="btn-green" style="background:#333; margin-top:10px;" onclick="toggleHistory()">История позиций</button>
-        <div id="m-history" style="display:none;"></div>
-        <h3 style="margin-top:20px;">Рекорды:</h3>
-        <div id="m-records" style="text-align:left;"></div>
-        <div id="admin-lvl-tools" style="display:none; border: 1px dashed red; padding:10px; margin-top:10px;">
-             <button class="btn-green" style="background:red;" onclick="deleteCurrentLevel()">УДАЛИТЬ УРОВЕНЬ</button>
-        </div>
+<div id="game-area">
+    <div class="chessboard" id="board"></div>
+    <div id="ui-panel">
+        <div class="turn-indicator" id="status-text">Ход белых</div>
+        <button onclick="location.reload()" style="padding:5px 10px; cursor:pointer;">Меню</button>
     </div>
 </div>
 
-<div id="modal-player" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-player')">&times;</span>
-        <img id="mp-ava" src="" class="p-avatar" style="width:80px; height:80px; margin-bottom:10px;">
-        <h2 id="mp-name">Player</h2>
-        <p>Баллы: <span id="mp-pts">0</span></p>
-        <p>Репутация: <span id="mp-rep">0</span></p>
-        <div style="display:flex; gap:10px; margin: 10px 0;">
-            <button class="btn-green" onclick="voteRep(1)">+</button>
-            <button class="btn-green" style="background:red;" onclick="voteRep(-1)">-</button>
-        </div>
-        <div id="mp-lists">
-             <button class="nav-btn" style="width:100%; margin-bottom:5px;" onclick="showPlayerRecords('Extreme Demon')">Extreme Demons</button>
-             <button class="nav-btn" style="width:100%; margin-bottom:5px;" onclick="showPlayerRecords('Insane Demon')">Insane Demons</button>
-             <button class="nav-btn" style="width:100%; margin-bottom:5px;" onclick="showPlayerRecords('Hard Demon')">Hard Demons</button>
-        </div>
-        <div id="mp-records-detail" style="margin-top:15px; text-align:left; background:#111; padding:10px; border-radius:5px; display:none;"></div>
-        <div id="admin-p-tools" style="display:none; border: 1px dashed red; padding:10px; margin-top:10px;">
-             <button class="btn-green" style="background:red;" onclick="adminBanPlayer()">ЗАБАНЬКА</button>
-        </div>
-    </div>
-</div>
-
-<div id="modal-add-lvl" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('modal-add-lvl')">&times;</span>
-        <h2>Новый уровень</h2>
-        <input id="add-name" placeholder="Название">
-        <input id="add-creator" placeholder="Создатель">
-        <input id="add-id" placeholder="ID">
-        <input id="add-pts" type="number" placeholder="Баллы">
-        <input id="add-video" placeholder="Ссылка YouTube">
-        <input id="add-pre" placeholder="Ссылка на превью (картинка)">
-        <select id="add-diff">
-            <option>Extreme Demon</option><option>Insane Demon</option>
-            <option>Hard Demon</option><option>Medium Demon</option><option>Easy Demon</option>
-        </select>
-        <button class="btn-green" onclick="createLevel()">СОЗДАТЬ</button>
-    </div>
-</div>
-
-<button class="secret-btn" onclick="secretAdmin()"></button>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, set, push, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
-        authDomain: "nouneimlist.firebaseapp.com",
-        databaseURL: "https://nouneimlist-default-rtdb.firebaseio.com",
-        projectId: "nouneimlist",
-        storageBucket: "nouneimlist.firebasestorage.app",
-        messagingSenderId: "871712258235",
-        appId: "1:871712258235:web:982874240dd587d749119e"
+<script>
+    // --- КОНФИГУРАЦИЯ ---
+    const config = {
+        boardSize: 8,
+        kingDeathEnds: true,
+        specialPieces: false,
+        aiLevel: 5
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
+    let board = []; // Массив состояния: { type: 'r', color: 'w', hp: 1, id: 'wP' }
+    let turn = 'w';
+    let playerColor = 'w';
+    let selectedIndex = null;
+    let possibleMoves = [];
+    let gameOver = false;
 
-    let currentU = null;
-    let uData = null;
-    let selLvlKey = null;
-    let selPKey = null;
-
-    // Навигация
-    window.showTab = (id) => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(event) event.target.classList.add('active');
+    // Иконки
+    const icons = {
+        // Стандарт
+        p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚',
+        // Особые
+        s: '🛡️', // Щитоносец (Shield)
+        w: '🧱', // Стена (Wall)
+        z: '⚡', // Зигзаг (Zigzag/Zeus)
+        c: '⚔️'  // Круговик (Commander/Circle)
     };
 
-    window.openModal = (id) => document.getElementById(id).style.display = 'flex';
-    window.closeModal = (id) => {
-        document.getElementById(id).style.display = 'none';
-        if(id === 'modal-lvl') document.getElementById('m-video').src = '';
-    };
+    const whiteIcons = { p:'♙', r:'♖', n:'♘', b:'♗', q:'♕', k:'♔', s:'🛡️', w:'🧱', z:'⚡', c:'⚔️' };
 
-    // Firebase Очистка YouTube ссылки
-    function getYTId(url) {
-        const reg = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(reg);
-        return (match && match[2].length === 11) ? match[2] : null;
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    function initGame(color) {
+        // Чтение настроек
+        config.kingDeathEnds = document.getElementById('opt-king').checked;
+        config.boardSize = document.getElementById('opt-board').checked ? 16 : 8;
+        config.specialPieces = document.getElementById('opt-special').checked;
+        config.aiLevel = parseInt(document.getElementById('opt-ai').value);
+        
+        playerColor = color;
+        
+        // Настройка сетки CSS
+        const boardEl = document.getElementById('board');
+        const cellSize = config.boardSize === 16 ? 35 : 70; // Уменьшаем клетки для большой доски
+        boardEl.style.gridTemplateColumns = `repeat(${config.boardSize}, ${cellSize}px)`;
+        boardEl.style.gridTemplateRows = `repeat(${config.boardSize}, ${cellSize}px)`;
+
+        createStartBoard();
+        
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('game-area').style.display = 'flex';
+        
+        turn = 'w';
+        gameOver = false;
+        renderBoard();
+
+        if (playerColor === 'b') setTimeout(aiTurn, 500);
     }
 
-    // Авторизация
-    window.authAction = async (type) => {
-        const log = document.getElementById('log-user').value.trim();
-        const pass = document.getElementById('log-pass').value;
-        const email = log + "@list.com";
+    function createStartBoard() {
+        board = new Array(config.boardSize * config.boardSize).fill(null);
+        const s = config.boardSize;
 
-        try {
-            if(type === 'reg') {
-                const res = await createUserWithEmailAndPassword(auth, email, pass);
-                const isAdm = pass === '423frwefsuio';
-                await set(ref(db, 'users/' + res.user.uid), {
-                    name: log, points: 0, rep: 0, 
-                    ava: 'https://i.imgur.com/v06XvYx.png',
-                    role: isAdm ? 'admin' : 'user',
-                    hardest: 'Easy Demon'
-                });
+        // Генератор фигуры: тип, цвет, жизни
+        const mk = (t, c, hp=1) => ({ type: t, color: c, hp: hp });
+
+        // Армии
+        const backRow = ['r','n','b','q','k','b','n','r'];
+        
+        // Если 16x16, расширяем армию
+        let row1, row2; 
+        if (s === 16) {
+            // Центр стандартный, края заполняем ладьями и конями
+            row1 = ['r','n','b','r','n','b','q','k','q','b','n','r','b','n','r','w'];
+            row2 = new Array(16).fill('p');
+        } else {
+            row1 = [...backRow];
+            row2 = new Array(8).fill('p');
+        }
+
+        // Вставка особых фигур, если включено
+        if (config.specialPieces) {
+            if (s === 8) {
+                // Заменяем пешки на щиты и т.д.
+                row2[0] = 's'; row2[7] = 's'; row2[3] = 'w'; row2[4] = 'w';
+                row1[1] = 'z'; row1[6] = 'c'; // Заменяем коней на спец
             } else {
-                await signInWithEmailAndPassword(auth, email, pass);
+                // Для 16x16 просто добавим их
+                row2[0]='s'; row2[1]='s'; row2[14]='s'; row2[15]='s';
+                row1[0]='z'; row1[15]='c';
+                row2[7]='w'; row2[8]='w';
             }
-        } catch(e) { alert("Ошибка! Проверь включен ли Email Auth в консоли Firebase."); }
-    };
+        }
 
-    window.logout = () => signOut(auth);
+        // Расстановка Черных (сверху)
+        for(let i=0; i<s; i++) {
+            if(row1[i]) board[i] = mk(row1[i], 'b', getHP(row1[i]));
+            if(row2[i]) board[i + s] = mk(row2[i], 'b', getHP(row2[i]));
+        }
 
-    onAuthStateChanged(auth, (u) => {
-        currentU = u;
-        if(u) {
-            onValue(ref(db, 'users/' + u.uid), (s) => {
-                uData = s.val();
-                document.getElementById('auth-box').style.display = 'none';
-                document.getElementById('profile-box').style.display = 'block';
-                document.getElementById('my-name').innerText = uData.name;
-                document.getElementById('my-pts').innerText = uData.points;
-                document.getElementById('my-ava').src = uData.ava;
-                if(uData.role === 'admin') {
-                    document.getElementById('admin-tab').style.display = 'block';
-                    document.getElementById('add-lvl-btn').style.display = 'block';
+        // Расстановка Белых (снизу)
+        for(let i=0; i<s; i++) {
+            if(row2[i]) board[s*(s-2) + i] = mk(row2[i], 'w', getHP(row2[i]));
+            if(row1[i]) board[s*(s-1) + i] = mk(row1[i], 'w', getHP(row1[i]));
+        }
+    }
+
+    function getHP(type) {
+        if (type === 's') return 2; // Щит
+        if (type === 'w') return 3; // Стена
+        return 1;
+    }
+
+    // --- ОТРИСОВКА ---
+    function renderBoard() {
+        const boardEl = document.getElementById('board');
+        boardEl.innerHTML = '';
+        const s = config.boardSize;
+
+        for (let i = 0; i < s * s; i++) {
+            const cell = document.createElement('div');
+            // Визуальный переворот для черных
+            let vIdx = playerColor === 'w' ? i : (s*s - 1 - i);
+            let piece = board[vIdx];
+            
+            let row = Math.floor(vIdx / s);
+            let col = vIdx % s;
+            
+            cell.className = `cell ${(row + col) % 2 === 0 ? 'white-cell' : 'black-cell'}`;
+            if (s === 16) cell.classList.add('small-font');
+            
+            cell.onclick = () => onCellClick(vIdx);
+
+            if (piece) {
+                // Выбор иконки
+                let ico = piece.color === 'w' ? whiteIcons[piece.type] : icons[piece.type];
+                cell.innerHTML = `<span>${ico}</span>`;
+                
+                // Индикатор HP если > 1
+                if (piece.hp > 1) {
+                    const hp = document.createElement('div');
+                    hp.className = 'hp-indicator';
+                    hp.innerText = piece.hp;
+                    cell.appendChild(hp);
+                }
+            }
+
+            // Подсветка
+            if (selectedIndex === vIdx) cell.classList.add('selected');
+            if (possibleMoves.includes(vIdx)) {
+                const mark = document.createElement('div');
+                // Проверка: ход с атакой или пустой?
+                // Атака если клетка не пуста ИЛИ (для щитов) мы знаем что там враг
+                let isAttack = board[vIdx] && board[vIdx].color !== turn;
+                mark.className = isAttack ? 'capture-ring' : 'dot';
+                cell.appendChild(mark);
+            }
+
+            boardEl.appendChild(cell);
+        }
+        
+        document.getElementById('status-text').innerText = gameOver ? "ИГРА ОКОНЧЕНА" : (turn === 'w' ? "Ход Белых" : "Ход Черных");
+    }
+
+    // --- ЛОГИКА ---
+    function onCellClick(idx) {
+        if (gameOver || turn !== playerColor) return;
+
+        // Если клик по точке хода
+        if (possibleMoves.includes(idx)) {
+            doMove(selectedIndex, idx);
+            return;
+        }
+
+        // Выбор фигуры
+        if (board[idx] && board[idx].color === turn) {
+            selectedIndex = idx;
+            possibleMoves = getMoves(idx, board);
+            renderBoard();
+        } else {
+            selectedIndex = null;
+            possibleMoves = [];
+            renderBoard();
+        }
+    }
+
+    function doMove(from, to, isAI = false) {
+        const attacker = board[from];
+        const target = board[to];
+        let moveEnd = true; // Обычно ход заканчивается перемещением
+
+        // Логика АТАКИ
+        if (target) {
+            // Если у цели есть HP > 1 (Щит, Стена)
+            if (target.hp > 1) {
+                target.hp -= 1; // Снимаем жизнь
+                moveEnd = false; // Атакующий НЕ переходит на клетку (рикошет)
+                // Но ход засчитывается как сделанный
+            } else {
+                // Обычное убийство
+                if (config.kingDeathEnds && target.type === 'k') {
+                    gameOver = true;
+                    alert(`Король ${target.color === 'w' ? 'Белых' : 'Черных'} пал! Победа ${attacker.color === 'w' ? 'Белых' : 'Черных'}!`);
+                }
+            }
+        }
+
+        if (moveEnd) {
+            board[to] = attacker;
+            board[from] = null;
+            
+            // Превращение пешки
+            checkPromotion(to, isAI);
+        }
+
+        // Сброс
+        selectedIndex = null;
+        possibleMoves = [];
+        
+        if (!gameOver) {
+            turn = turn === 'w' ? 'b' : 'w';
+            renderBoard();
+            
+            // Если сейчас ход ИИ
+            if (turn !== playerColor) {
+                setTimeout(aiTurn, 100);
+            }
+        } else {
+            renderBoard();
+        }
+    }
+
+    function checkPromotion(idx, isAI) {
+        const p = board[idx];
+        if (p.type !== 'p') return;
+        
+        const s = config.boardSize;
+        const row = Math.floor(idx / s);
+        const endRow = p.color === 'w' ? 0 : s - 1;
+
+        if (row === endRow) {
+            if (isAI) {
+                p.type = 'q'; // ИИ всегда берет ферзя
+            } else {
+                let newType = prompt("Превращение! Введите букву: q (Ферзь), n (Конь), r (Ладья), b (Слон), w (Стена)", "q");
+                const map = {'q':'q', 'n':'n', 'r':'r', 'b':'b', 'w':'w', 's':'s'};
+                p.type = map[newType && newType.toLowerCase()] || 'q';
+            }
+        }
+    }
+
+    // --- ГЕНЕРАТОР ХОДОВ ---
+    function getMoves(idx, bd) {
+        const piece = bd[idx];
+        if (!piece) return [];
+        const moves = [];
+        const s = config.boardSize;
+        const r = Math.floor(idx / s);
+        const c = idx % s;
+
+        const add = (nr, nc) => {
+            if (nr >= 0 && nr < s && nc >= 0 && nc < s) {
+                const tIdx = nr * s + nc;
+                const target = bd[tIdx];
+                if (!target) {
+                    moves.push(tIdx);
+                    return true; // continue sliding
+                } else if (target.color !== piece.color) {
+                    moves.push(tIdx); // capture
+                    return false; // stop sliding
+                } else {
+                    return false; // blocked by friend
+                }
+            }
+            return false;
+        };
+
+        const slide = (dr, dc, limit = 99) => {
+            for (let k = 1; k <= limit; k++) {
+                if (!add(r + dr * k, c + dc * k)) break;
+            }
+        };
+
+        switch (piece.type) {
+            case 'p': // Пешка
+                let d = piece.color === 'w' ? -1 : 1;
+                let startR = piece.color === 'w' ? s-2 : 1; // Учет размера доски
+                // Ход вперед
+                if (r+d >=0 && r+d < s && !bd[(r+d)*s + c]) {
+                    moves.push((r+d)*s + c);
+                    if (r === startR && !bd[(r+d*2)*s + c]) moves.push((r+d*2)*s + c);
+                }
+                // Атака
+                if(c>0 && bd[(r+d)*s + c-1] && bd[(r+d)*s + c-1].color !== piece.color) moves.push((r+d)*s + c-1);
+                if(c<s-1 && bd[(r+d)*s + c+1] && bd[(r+d)*s + c+1].color !== piece.color) moves.push((r+d)*s + c+1);
+                break;
+            case 's': // Щит (как пешка, но без двойного хода, зато жирный)
+                let d2 = piece.color === 'w' ? -1 : 1;
+                if (r+d2 >=0 && r+d2 < s && !bd[(r+d2)*s + c]) moves.push((r+d2)*s + c);
+                // Бьет как пешка
+                if(c>0 && bd[(r+d2)*s + c-1] && bd[(r+d2)*s + c-1].color !== piece.color) moves.push((r+d2)*s + c-1);
+                if(c<s-1 && bd[(r+d2)*s + c+1] && bd[(r+d2)*s + c+1].color !== piece.color) moves.push((r+d2)*s + c+1);
+                break;
+            case 'n': // Конь
+                [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(([dr,dc]) => add(r+dr, c+dc));
+                break;
+            case 'b': // Слон
+                [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => slide(dr,dc));
+                break;
+            case 'r': // Ладья
+                [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => slide(dr,dc));
+                break;
+            case 'q': // Ферзь
+                [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => slide(dr,dc));
+                break;
+            case 'k': // Король
+                [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => add(r+dr, c+dc));
+                break;
+            
+            // --- СПЕЦ ФИГУРЫ ---
+            case 'w': // Стена (ходит как король, но ооочень медленно, только ортогонально)
+                 [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => add(r+dr, c+dc));
+                 break;
+            case 'z': // Зигзаг (Зевс) - диагональ через 1 клетку (как слон, но прыгает)
+                [[2,2],[2,-2],[-2,2],[-2,-2]].forEach(([dr,dc]) => add(r+dr, c+dc));
+                // И короткий ход ортогонально
+                [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => add(r+dr, c+dc));
+                break;
+            case 'c': // Круговик (Commander) - "Круг 3x3 без углов" = Крест на 1 клетку
+                [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => add(r+dr, c+dc));
+                break;
+        }
+        return moves;
+    }
+
+    // --- ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ ---
+    function aiTurn() {
+        if (gameOver) return;
+        
+        const aiColor = playerColor === 'w' ? 'b' : 'w';
+        let allMoves = [];
+
+        // 1. Сбор всех ходов
+        for(let i=0; i<board.length; i++) {
+            if(board[i] && board[i].color === aiColor) {
+                let mvs = getMoves(i, board);
+                mvs.forEach(to => allMoves.push({from: i, to: to}));
+            }
+        }
+
+        if (allMoves.length === 0) return; // Пат или мат
+
+        let chosenMove = null;
+
+        // ЛОГИКА ПО УРОВНЯМ
+        if (config.aiLevel <= 2) {
+            // Уровень 1-2: Полный рандом
+            chosenMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+        } 
+        else if (config.aiLevel <= 6) {
+            // Уровень 3-6: Жадный (бьет, если может)
+            // Сортируем ходы по ценности жертвы
+            allMoves.sort((a, b) => {
+                let valA = board[a.to] ? getPieceValue(board[a.to].type) : 0;
+                let valB = board[b.to] ? getPieceValue(board[b.to].type) : 0;
+                return valB - valA;
+            });
+            // Берем лучший, но с небольшим шансом ошибки для реализма
+            chosenMove = allMoves[0]; 
+            if (config.aiLevel < 6 && Math.random() > 0.7) {
+                chosenMove = allMoves[Math.floor(Math.random() * Math.min(3, allMoves.length))];
+            }
+        } 
+        else {
+            // Уровень 7-10: Просчет ответа (Minimax глубины 1 с оценкой позиции)
+            let bestScore = -99999;
+            
+            // Если ходов слишком много (16x16), обрезаем поиск
+            let candidates = allMoves;
+            if (candidates.length > 50) candidates = candidates.sort(() => 0.5 - Math.random()).slice(0, 50);
+
+            candidates.forEach(move => {
+                // Симуляция хода
+                let savedTo = board[move.to];
+                let savedFrom = board[move.from];
+                
+                // Эмуляция взятия
+                let moveScore = 0;
+                if (savedTo) moveScore += getPieceValue(savedTo.type) * 10;
+                
+                board[move.to] = savedFrom;
+                board[move.from] = null;
+
+                // Ответный удар игрока?
+                let maxPlayerResponse = 0;
+                // Очень упрощенная проверка: может ли игрок съесть эту фигуру теперь?
+                // (Полный перебор слишком тяжел для JS в одном потоке на большой доске)
+                if (config.aiLevel === 10) {
+                     // Тут можно добавить сложную логику, но для браузера ограничимся позиционкой
+                     // Штраф если подставляемся под бой
+                }
+
+                board[move.from] = savedFrom;
+                board[move.to] = savedTo;
+                
+                // Добавляем случайность
+                moveScore += Math.random() * 2;
+
+                if (moveScore > bestScore) {
+                    bestScore = moveScore;
+                    chosenMove = move;
                 }
             });
-        } else {
-            document.getElementById('auth-box').style.display = 'block';
-            document.getElementById('profile-box').style.display = 'none';
-            document.getElementById('admin-tab').style.display = 'none';
-            document.getElementById('add-lvl-btn').style.display = 'none';
         }
-    });
 
-    // Уровни
-    window.createLevel = () => {
-        const lvl = {
-            name: document.getElementById('add-name').value,
-            creator: document.getElementById('add-creator').value,
-            id: document.getElementById('add-id').value,
-            pts: parseInt(document.getElementById('add-pts').value),
-            video: getYTId(document.getElementById('add-video').value),
-            pre: document.getElementById('add-pre').value,
-            diff: document.getElementById('add-diff').value,
-            date: new Date().toLocaleDateString()
-        };
-        push(ref(db, 'levels'), lvl);
-        closeModal('modal-add-lvl');
-    };
-
-    window.renderLevels = () => {
-        onValue(ref(db, 'levels'), (s) => {
-            const list = document.getElementById('levels-list');
-            const select = document.getElementById('sub-lvl-select');
-            list.innerHTML = ''; select.innerHTML = '';
-            const data = s.val(); if(!data) return;
-
-            const lvls = Object.entries(data).sort((a,b) => b[1].pts - a[1].pts);
-            lvls.forEach(([key, l], i) => {
-                const rank = i + 1;
-                select.innerHTML += `<option value="${key}">${l.name}</option>`;
-                
-                const div = document.createElement('div');
-                div.className = 'lvl-item';
-                div.innerHTML = `
-                    <div class="lvl-bg" style="background-image:url('${l.pre}')"></div>
-                    <div class="lvl-rank ${rank==1?'r1':rank==2?'r2':rank==3?'r3':''}">${rank}</div>
-                    <div class="lvl-info">
-                        <div class="lvl-name"><b>${l.name}</b></div>
-                        <div class="lvl-diff">${l.diff}</div>
-                    </div>
-                `;
-                div.onclick = () => openLvl(key, l, rank);
-                list.appendChild(div);
-            });
-        });
-    };
-
-    function openLvl(key, l, rank) {
-        selLvlKey = key;
-        document.getElementById('m-name').innerText = l.name;
-        document.getElementById('m-by').innerText = "by " + l.creator;
-        document.getElementById('m-video').src = "https://www.youtube.com/embed/" + l.video;
-        document.getElementById('m-id-btn').innerText = "ID: " + l.id;
-        document.getElementById('m-history').innerHTML = `<div class="history-line">Поставлен на ${rank} место (${l.date})</div>`;
-        
-        // Загрузка рекордов
-        const recBox = document.getElementById('m-records');
-        recBox.innerHTML = '';
-        if(l.records) {
-            Object.values(l.records).forEach(r => {
-                recBox.innerHTML += `<p style="cursor:pointer; color:var(--accent);" onclick="openPById('${r.uid}')">${r.name} - ${r.percent}%</p>`;
-            });
+        if (chosenMove) {
+            doMove(chosenMove.from, chosenMove.to, true);
         }
-        
-        if(uData?.role === 'admin') document.getElementById('admin-lvl-tools').style.display = 'block';
-        openModal('modal-lvl');
     }
 
-    // Игроки
-    window.renderPlayers = () => {
-        onValue(ref(db, 'users'), (s) => {
-            const list = document.getElementById('players-list');
-            list.innerHTML = '';
-            const data = s.val(); if(!data) return;
-            const ps = Object.entries(data).sort((a,b) => b[1].points - a[1].points);
-
-            ps.forEach(([key, p], i) => {
-                const div = document.createElement('div');
-                div.className = 'player-item';
-                div.innerHTML = `<img src="${p.ava}" class="p-avatar"> <b>#${i+1} ${p.name}</b> <span style="margin-left:auto">${p.points} PTS</span>`;
-                div.onclick = () => openP(key, p);
-                list.appendChild(div);
-            });
-        });
-    };
-
-    async function openP(key, p) {
-        selPKey = key;
-        document.getElementById('mp-ava').src = p.ava;
-        document.getElementById('mp-name').innerText = p.name;
-        document.getElementById('mp-pts').innerText = p.points;
-        document.getElementById('mp-rep').innerText = p.rep || 0;
-        document.getElementById('mp-records-detail').style.display = 'none';
-        if(uData?.role === 'admin') document.getElementById('admin-p-tools').style.display = 'block';
-        openModal('modal-player');
+    function getPieceValue(t) {
+        const vals = { p:10, s:15, z:25, c:25, n:30, b:30, r:50, w:60, q:90, k:900 };
+        return vals[t] || 0;
     }
 
-    window.showPlayerRecords = async (diff) => {
-        const box = document.getElementById('mp-records-detail');
-        box.innerHTML = `Загрузка ${diff}...`;
-        box.style.display = 'block';
-        
-        const lvlsSnap = await get(ref(db, 'levels'));
-        const lvls = lvlsSnap.val();
-        let found = [];
-        
-        for(let lKey in lvls) {
-            if(lvls[lKey].diff === diff && lvls[lKey].records) {
-                Object.values(lvls[lKey].records).forEach(r => {
-                    if(r.uid === selPKey) found.push(lvls[lKey].name);
-                });
-            }
-        }
-        box.innerHTML = found.length ? found.join('<br>') : "Нет пройденных уровней этой сложности";
-    };
-
-    // Реквесты
-    window.submitRecord = () => {
-        if(!currentU) return alert("Войди в аккаунт!");
-        const req = {
-            uid: currentU.uid,
-            uName: uData.name,
-            lKey: document.getElementById('sub-lvl-select').value,
-            lName: document.getElementById('sub-lvl-select').options[document.getElementById('sub-lvl-select').selectedIndex].text,
-            percent: document.getElementById('sub-percent').value,
-            video: document.getElementById('sub-video').value
-        };
-        push(ref(db, 'requests'), req);
-        alert("Отправлено!");
-    };
-
-    onValue(ref(db, 'requests'), (s) => {
-        const list = document.getElementById('req-list');
-        list.innerHTML = '';
-        const data = s.val(); if(!data) return;
-        Object.entries(data).forEach(([key, r]) => {
-            const div = document.createElement('div');
-            div.style = "background:#222; padding:10px; margin-bottom:10px; border-radius:10px;";
-            div.innerHTML = `
-                <p><b>${r.uName}</b> -> ${r.lName} (${r.percent}%)</p>
-                <a href="${r.video}" target="_blank" style="color:var(--accent)">Видео</a><br>
-                <button class="btn-green" style="width:auto; margin-top:5px;" onclick="acceptReq('${key}')">ПРИНЯТЬ</button>
-            `;
-            list.appendChild(div);
-        });
-    });
-
-    window.acceptReq = async (rKey) => {
-        const snap = await get(ref(db, 'requests/' + rKey));
-        const r = snap.val();
-        const lSnap = await get(ref(db, 'levels/' + r.lKey));
-        const l = lSnap.val();
-
-        // Добавляем рекорд в уровень
-        push(ref(db, `levels/${r.lKey}/records`), { uid: r.uid, name: r.uName, percent: r.percent });
-        
-        // Начисляем очки игроку
-        const pSnap = await get(ref(db, 'users/' + r.uid));
-        const p = pSnap.val();
-        update(ref(db, 'users/' + r.uid), { points: (p.points || 0) + l.pts });
-        
-        remove(ref(db, 'requests/' + rKey));
-    };
-
-    window.secretAdmin = () => {
-        const p = prompt("PASSWORD:");
-        if(p === 'GD_GOD_99' && currentU) {
-            update(ref(db, 'users/' + currentU.uid), { role: 'admin' });
-            location.reload();
-        }
-    };
-
-    window.renderLevels();
-    window.renderPlayers();
 </script>
 </body>
 </html>
-</body>
-</html>
+
 
