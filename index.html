@@ -181,82 +181,100 @@
     </div>
 </div>
 
-<!-- FIREBASE (module) -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getDatabase, ref, set, get, onValue, child, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
-      authDomain: "nouneimlist.firebaseapp.com",
-      databaseURL: "https://nouneimlist-default-rtdb.firebaseio.com",
-      projectId: "nouneimlist",
-      storageBucket: "nouneimlist.firebasestorage.app",
-      messagingSenderId: "871712258235",
-      appId: "1:871712258235:web:982874240dd587d749119e"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    const EMAIL_DOMAIN = '@ultimatechess.local';
-
-    window.registerUser = async (username, password) => {
-        if (!username || !password) throw new Error('Логин и пароль обязательны');
-        const email = username + EMAIL_DOMAIN;
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        return cred.user;
-    };
-
-    window.loginUser = async (username, password) => {
-        if (!username || !password) throw new Error('Логин и пароль обязательны');
-        const email = username + EMAIL_DOMAIN;
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        return cred.user;
-    };
-
-    // create room with settings and add owner to players
-    window.createRoom = async (roomName, settings) => {
-        if (!auth.currentUser) throw new Error('Требуется вход в систему');
-        if (!roomName) throw new Error('Имя комнаты обязательно');
-        const key = encodeURIComponent(roomName);
-        const ownerName = auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'anon';
-        const roomRef = ref(db, 'rooms/' + key);
-        await set(roomRef, {
-            name: roomName,
-            ownerUid: auth.currentUser.uid,
-            ownerName: ownerName,
-            createdAt: Date.now(),
-            settings: settings || {},
-            players: { [auth.currentUser.uid]: { name: ownerName } },
-            state: { started: false }
-        });
-        return key;
-    };
-
-    window.joinRoom = async (roomName) => {
-        if (!auth.currentUser) throw new Error('Требуется вход в систему');
-        if (!roomName) throw new Error('Имя комнаты обязательно');
-        const key = encodeURIComponent(roomName);
-        const snap = await get(ref(db, 'rooms/' + key));
-        if (!snap.exists()) throw new Error('Комната не найдена');
-        const playerName = auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'anon';
-        await set(ref(db, 'rooms/' + key + '/players/' + auth.currentUser.uid), { name: playerName });
-        return snap.val();
-    };
-
-    onAuthStateChanged(auth, user => {
-        window.currentUser = user || null;
-        const input = document.getElementById('login-username');
-        if (user) {
-            try { input.value = user.email.split('@')[0]; } catch(e) {}
-        }
-    });
-
+<!-- FIREBASE (config used by module below) -->
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
+  authDomain: "nouneimlist.firebaseapp.com",
+  databaseURL: "https://nouneimlist-default-rtdb.firebaseio.com",
+  projectId: "nouneimlist",
+  storageBucket: "nouneimlist.firebasestorage.app",
+  messagingSenderId: "871712258235",
+  appId: "1:871712258235:web:982874240dd587d749119e"
+};
 </script>
 
+<!-- MODULE: Firebase imports and helpers (single place) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  // export into window so non-module script can use them
+  window.auth = auth;
+  window.db = db;
+  window.ref = ref;
+  window.set = set;
+  window.get = get;
+  window.update = update;
+  window.onValue = onValue;
+  window.remove = remove;
+
+  const EMAIL_DOMAIN = '@ultimatechess.local';
+
+  window.registerUser = async (username, password) => {
+      if (!username || !password) throw new Error('Логин и пароль обязательны');
+      const email = username + EMAIL_DOMAIN;
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      return cred.user;
+  };
+
+  window.loginUser = async (username, password) => {
+      if (!username || !password) throw new Error('Логин и пароль обязательны');
+      const email = username + EMAIL_DOMAIN;
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      return cred.user;
+  };
+
+  window.createRoom = async (roomName, settings) => {
+      if (!auth.currentUser) throw new Error('Требуется вход в систему');
+      if (!roomName) throw new Error('Имя комнаты обязательно');
+
+      const key = encodeURIComponent(roomName);
+      const ownerName = auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'anon';
+      const roomRef = ref(db, 'rooms/' + key);
+
+      await set(roomRef, {
+          name: roomName,
+          ownerUid: auth.currentUser.uid,
+          ownerName: ownerName,
+          createdAt: Date.now(),
+          settings: settings || {},
+          players: { [auth.currentUser.uid]: { name: ownerName } },
+          state: { started: false }
+      });
+
+      return key;
+  };
+
+  window.joinRoom = async (roomName) => {
+      if (!auth.currentUser) throw new Error('Требуется вход в систему');
+      if (!roomName) throw new Error('Имя комнаты обязательно');
+
+      const key = encodeURIComponent(roomName);
+      const snap = await get(ref(db, 'rooms/' + key));
+      if (!snap.exists()) throw new Error('Комната не найдена');
+
+      const playerName = auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'anon';
+      await set(ref(db, 'rooms/' + key + '/players/' + auth.currentUser.uid), { name: playerName });
+
+      return snap.val();
+  };
+
+  onAuthStateChanged(auth, user => {
+      window.currentUser = user || null;
+      const input = document.getElementById('login-username');
+      if (user) {
+          try { input.value = user.email.split('@')[0]; } catch(e) {}
+      }
+  });
+</script>
+
+<!-- GAME SCRIPT (kept your logic, with small fixes: startRoomSync call and no duplicate firebase blocks) -->
 <script>
     // --- КОНФИГУРАЦИЯ ---
     const config = {
@@ -322,8 +340,7 @@
     leaveRoomBtn.addEventListener('click', async () => {
         if (!currentRoomKey || !window.currentUser) return;
         try {
-            // remove player
-            await window.firebaseRemovePlayer?.(currentRoomKey, window.currentUser.uid);
+            await window.set(window.ref(window.db, 'rooms/' + currentRoomKey + '/players/' + window.currentUser.uid), null);
         } catch(e){}
         closeRoomPanel();
     });
@@ -359,14 +376,9 @@
 
     // listenRoom: set onValue listener to update players list and react to start
     async function listenRoom(key) {
-        const db = window.firebaseDatabase || window.db;
-        const roomRef = window.dbRef ? window.dbRef('rooms/'+key) : null;
-        // instead of complicated indirection, use firebase globals from earlier script
-        const { ref, onValue, get } = window.__firebase_db_helpers__ || {}; // fallback
-        // We'll use the db global functions via window (the module exposed db variable earlier)
-        const r = window.db ? window.ref(window.db, 'rooms/' + key) : null;
+        const r = window.ref(window.db, 'rooms/' + key);
         if (!r) return;
-        onValue(r, snap => {
+        window.onValue(r, snap => {
             const data = snap.val();
             // update players list
             playersListEl.innerHTML = '';
@@ -398,6 +410,9 @@
                 createStartBoard();
                 turn = data.state.turn || 'w';
                 renderBoard();
+
+                // start syncing boardSnapshot and revealed
+                startRoomSync(key);
             }
 
             // if players <2 and host -> show start button disabled, else enabled for host
@@ -783,17 +798,11 @@
         try { await window.loginUser(u,p); alert('Вход выполнен: '+u); } catch(e){ alert('Ошибка входа: '+e.message); }
     });
 
-    // expose helpers for firebase global access
-    window.db = window.db || (window.db = window.db || (function(){ try { return window.__db || window.db; } catch(e){ return null; } })());
-    // but earlier module created `db` in module scope not in window; the module exposes get/set/ref/onValue via window already in created script
-    // To ensure functions like window.ref/window.set exist, we attach them here using the module script's functions
-    // (the previous module created functions in its own scope; if they are not available this area will fail silently)
-
     // done
-
 </script>
 </body>
 </html>
+
 
 
 
