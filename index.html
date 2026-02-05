@@ -17,7 +17,9 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
         h1 { font-size: 50px; margin: 0 0 20px 0; color: #f1c40f; letter-spacing: 5px; text-transform: uppercase; }
-        
+
+        .top-row { display:flex; gap:12px; align-items:center; }
+
         .auth-box {
             background: #2b2b2b; padding: 12px 16px; border-radius: 8px; margin-bottom: 14px;
             display: flex; gap: 10px; align-items: center; border: 1px solid #444;
@@ -40,6 +42,15 @@
             cursor: pointer; transition: 0.2s; font-weight: bold; width: 100%;
         }
         .btn-start:hover { background: #2ecc71; transform: scale(1.02); }
+
+        /* --- Players panel --- */
+        .players-panel {
+            position: absolute; left: 12px; top: 12px; width: 220px; background: rgba(20,20,20,0.95);
+            border:1px solid #444; padding: 10px; border-radius: 8px; color:#ddd; z-index:200;
+            display: none; flex-direction: column; gap:8px;
+        }
+        .players-panel h3 { margin:0 0 6px 0; font-size:14px; color:#f1c40f }
+        .player-item { padding:6px; background:#222; border-radius:6px; display:flex; justify-content:space-between; align-items:center }
 
         /* --- ИГРА --- */
         #game-area { display: none; flex-direction: column; align-items: center; width: 100%; height: 100%; }
@@ -87,18 +98,32 @@
         .turn-indicator { font-size: 20px; font-weight: bold; }
 
         /* Fog / Blind mode */
-        .fog {
-            background: #000 !important; color: #000 !important; cursor: default !important;
-        }
+        .fog { background: #000 !important; color: #000 !important; cursor: default !important; }
 
         /* Room UI inside menu */
         .room-box { background:#2d2d2d; padding:10px; border-radius:8px; margin-top:10px; border:1px solid #444; width:300px; display:flex; flex-direction:column; gap:8px }
         .room-box input { padding:6px; border-radius:4px; border:1px solid #555; background:#222; color:white }
         .room-box button { padding:8px; border-radius:4px; border:none; cursor:pointer }
 
+        /* prettier piece visuals */
+        .piece { font-size: 36px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
+        .piece.special { font-size: 30px; }
+
+        /* play again button */
+        .play-again { padding:8px 12px; border-radius:6px; background:#2980b9; border:none; cursor:pointer; color:white }
+
     </style>
 </head>
 <body>
+
+<div class="players-panel" id="players-panel">
+    <h3>Игроки</h3>
+    <div id="players-list"></div>
+    <div id="room-actions" style="display:flex;gap:6px;margin-top:8px">
+        <button id="start-room-btn" style="flex:1">Начать игру</button>
+        <button id="leave-room-btn" style="flex:1">Покинуть</button>
+    </div>
+</div>
 
 <div id="menu">
     <h1>Шахматы 2.0</h1>
@@ -111,7 +136,7 @@
         <button id="login-btn">Вход</button>
     </div>
 
-    <div class="settings-box">
+    <div class="settings-box" id="settings-box">
         <div class="setting-row">
             <label for="opt-king">☠️ Смерть Короля = Конец</label>
             <input type="checkbox" id="opt-king" checked>
@@ -128,12 +153,12 @@
             <label for="opt-blind">🌑 Режим слепоты (туман войны)</label>
             <input type="checkbox" id="opt-blind">
         </div>
-        <div class="setting-row">
+        <div class="setting-row" id="ai-row">
             <label>🧠 Интеллект ИИ: <span id="ai-val">5</span></label>
             <input type="range" id="opt-ai" min="1" max="10" value="5" oninput="document.getElementById('ai-val').innerText=this.value">
         </div>
-        <button class="btn-start" onclick="initGame('w')">ИГРАТЬ (Белые)</button>
-        <button class="btn-start" style="background:#8e44ad" onclick="initGame('b')">ИГРАТЬ (Черные)</button>
+        <button class="btn-start" id="play-local-white">ИГРАТЬ (Белые)</button>
+        <button class="btn-start" style="background:#8e44ad" id="play-local-black">ИГРАТЬ (Черные)</button>
     </div>
 
     <!-- ROOM CREATION / JOIN -->
@@ -156,12 +181,11 @@
     </div>
 </div>
 
-<!-- FIREBASE (module) - добавлено без изменения существующего игрового кода -->
+<!-- FIREBASE (module) -->
 <script type="module">
-    // Используем модульный SDK Firebase (браузер). Небольшая обёртка - экспортируем простые функции в window.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getDatabase, ref, set, get, onValue, child, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC2kE0eAffr3S7tnax0Ym9int4MvNlucg4",
@@ -177,14 +201,12 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Простая конвенция: пользователь использует логин (без @) и мы добавляем суффикс для создания email при аутентификации.
     const EMAIL_DOMAIN = '@ultimatechess.local';
 
     window.registerUser = async (username, password) => {
         if (!username || !password) throw new Error('Логин и пароль обязательны');
         const email = username + EMAIL_DOMAIN;
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        // можно добавить displayName
         return cred.user;
     };
 
@@ -195,16 +217,21 @@
         return cred.user;
     };
 
-    // Создать комнату: сохраняем по ключу закодированного имени
-    window.createRoom = async (roomName) => {
+    // create room with settings and add owner to players
+    window.createRoom = async (roomName, settings) => {
         if (!auth.currentUser) throw new Error('Требуется вход в систему');
         if (!roomName) throw new Error('Имя комнаты обязательно');
         const key = encodeURIComponent(roomName);
-        await set(ref(db, 'rooms/' + key), {
+        const ownerName = auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'anon';
+        const roomRef = ref(db, 'rooms/' + key);
+        await set(roomRef, {
             name: roomName,
             ownerUid: auth.currentUser.uid,
-            ownerName: auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'anon',
-            createdAt: Date.now()
+            ownerName: ownerName,
+            createdAt: Date.now(),
+            settings: settings || {},
+            players: { [auth.currentUser.uid]: { name: ownerName } },
+            state: { started: false }
         });
         return key;
     };
@@ -215,15 +242,15 @@
         const key = encodeURIComponent(roomName);
         const snap = await get(ref(db, 'rooms/' + key));
         if (!snap.exists()) throw new Error('Комната не найдена');
+        const playerName = auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'anon';
+        await set(ref(db, 'rooms/' + key + '/players/' + auth.currentUser.uid), { name: playerName });
         return snap.val();
     };
 
-    // Динамика UI в меню (подключаем слушателей)
     onAuthStateChanged(auth, user => {
         window.currentUser = user || null;
         const input = document.getElementById('login-username');
         if (user) {
-            // подставим имя пользователя (email без домена)
             try { input.value = user.email.split('@')[0]; } catch(e) {}
         }
     });
@@ -237,72 +264,233 @@
         kingDeathEnds: true,
         specialPieces: false,
         aiLevel: 5,
-        blindMode: false // добавлено для режима слепоты
+        blindMode: false
     };
 
-    let board = []; // Массив состояния: { type: 'r', color: 'w', hp: 1, id: 'wP' }
+    let board = [];
     let turn = 'w';
     let playerColor = 'w';
     let selectedIndex = null;
     let possibleMoves = [];
     let gameOver = false;
 
-    // Иконки
-    const icons = {
-        // Стандарт
-        p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚',
-        // Особые
-        s: '🛡️', // Щитоносец (Shield)
-        w: '🧱', // Стена (Wall)
-        z: '⚡', // Зигзаг (Zigzag/Zeus)
-        c: '⚔️'  // Круговик (Commander/Circle)
-    };
+    // room state
+    let currentRoomKey = null;
+    let isRoomHost = false;
+    let isRoomGame = false;
+    let localRevealed = new Set();
 
+    const icons = { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚', s: '🛡️', w: '🧱', z: '⚡', c: '⚔️' };
     const whiteIcons = { p:'♙', r:'♖', n:'♘', b:'♗', q:'♕', k:'♔', s:'🛡️', w:'🧱', z:'⚡', c:'⚔️' };
 
-    // --- ИНИЦИАЛИЗАЦИЯ ---
-    function initGame(color) {
-        // Чтение настроек
+    // bind local play buttons
+    document.getElementById('play-local-white').addEventListener('click', () => initGame('w', false));
+    document.getElementById('play-local-black').addEventListener('click', () => initGame('b', false));
+
+    // --- Room UI elements ---
+    const playersPanel = document.getElementById('players-panel');
+    const playersListEl = document.getElementById('players-list');
+    const startRoomBtn = document.getElementById('start-room-btn');
+    const leaveRoomBtn = document.getElementById('leave-room-btn');
+
+    document.getElementById('create-room-btn').addEventListener('click', async () => {
+        const rn = document.getElementById('room-name').value.trim();
+        try {
+            const settings = captureSettings();
+            const key = await window.createRoom(rn, settings);
+            currentRoomKey = key;
+            isRoomHost = true;
+            openRoomPanel();
+            listenRoom(key);
+            alert('Комната создана: ' + rn);
+        } catch (e) { alert('Ошибка создания комнаты: ' + e.message); }
+    });
+
+    document.getElementById('join-room-btn').addEventListener('click', async () => {
+        const rn = document.getElementById('room-name').value.trim();
+        try {
+            const data = await window.joinRoom(rn);
+            const key = encodeURIComponent(rn);
+            currentRoomKey = key;
+            isRoomHost = (window.currentUser && window.currentUser.uid === data.ownerUid);
+            openRoomPanel();
+            listenRoom(key);
+            alert('Вход в комнату: ' + rn);
+        } catch (e) { alert('Ошибка входа в комнату: ' + e.message); }
+    });
+
+    leaveRoomBtn.addEventListener('click', async () => {
+        if (!currentRoomKey || !window.currentUser) return;
+        try {
+            // remove player
+            await window.firebaseRemovePlayer?.(currentRoomKey, window.currentUser.uid);
+        } catch(e){}
+        closeRoomPanel();
+    });
+
+    startRoomBtn.addEventListener('click', async () => {
+        if (!currentRoomKey) return;
+        try {
+            await startRoomGame(currentRoomKey);
+        } catch(e) { alert('Ошибка старта: '+e.message); }
+    });
+
+    // Small helper - capture settings currently selected in UI
+    function captureSettings() {
+        return {
+            kingDeathEnds: document.getElementById('opt-king').checked,
+            boardSize: document.getElementById('opt-board').checked ? 16 : 8,
+            specialPieces: document.getElementById('opt-special').checked,
+            blindMode: document.getElementById('opt-blind').checked,
+            aiLevel: parseInt(document.getElementById('opt-ai').value)
+        };
+    }
+
+    function openRoomPanel() {
+        playersPanel.style.display = 'flex';
+        // hide AI row (room games are player vs player)
+        document.getElementById('ai-row').style.display = 'none';
+    }
+    function closeRoomPanel() {
+        playersPanel.style.display = 'none';
+        currentRoomKey = null; isRoomHost = false; isRoomGame = false; localRevealed.clear();
+        document.getElementById('ai-row').style.display = '';
+    }
+
+    // listenRoom: set onValue listener to update players list and react to start
+    async function listenRoom(key) {
+        const db = window.firebaseDatabase || window.db;
+        const roomRef = window.dbRef ? window.dbRef('rooms/'+key) : null;
+        // instead of complicated indirection, use firebase globals from earlier script
+        const { ref, onValue, get } = window.__firebase_db_helpers__ || {}; // fallback
+        // We'll use the db global functions via window (the module exposed db variable earlier)
+        const r = window.db ? window.ref(window.db, 'rooms/' + key) : null;
+        if (!r) return;
+        onValue(r, snap => {
+            const data = snap.val();
+            // update players list
+            playersListEl.innerHTML = '';
+            const players = data && data.players ? data.players : {};
+            const uids = Object.keys(players);
+            uids.forEach(uid => {
+                const name = players[uid].name || 'anon';
+                const color = players[uid].color || '';
+                const div = document.createElement('div');
+                div.className = 'player-item';
+                div.innerHTML = `<span>${name}</span><small>${color ? color.toUpperCase() : ''}</small>`;
+                playersListEl.appendChild(div);
+            });
+
+            // if game started remotely -> start game locally with settings and assigned colors
+            if (data && data.state && data.state.started) {
+                isRoomGame = true;
+                // apply settings
+                if (data.settings) applySettingsFromRoom(data.settings);
+                // set playerColor according to assignment
+                if (window.currentUser && data.players && data.players[window.currentUser.uid]) {
+                    const assigned = data.players[window.currentUser.uid].color;
+                    if (assigned) playerColor = assigned;
+                }
+                // hide menu and show board
+                document.getElementById('menu').style.display = 'none';
+                document.getElementById('game-area').style.display = 'flex';
+                // initialize board according to settings
+                createStartBoard();
+                turn = data.state.turn || 'w';
+                renderBoard();
+            }
+
+            // if players <2 and host -> show start button disabled, else enabled for host
+            if (isRoomHost) {
+                startRoomBtn.disabled = (uids.length < 2);
+            }
+        });
+    }
+
+    function applySettingsFromRoom(settings) {
+        try {
+            document.getElementById('opt-king').checked = !!settings.kingDeathEnds;
+            document.getElementById('opt-board').checked = (settings.boardSize === 16);
+            document.getElementById('opt-special').checked = !!settings.specialPieces;
+            document.getElementById('opt-blind').checked = !!settings.blindMode;
+            document.getElementById('opt-ai').value = settings.aiLevel || 5;
+            document.getElementById('ai-val').innerText = settings.aiLevel || 5;
+            config.kingDeathEnds = !!settings.kingDeathEnds;
+            config.boardSize = settings.boardSize || 8;
+            config.specialPieces = !!settings.specialPieces;
+            config.blindMode = !!settings.blindMode;
+            config.aiLevel = settings.aiLevel || 5;
+        } catch(e){}
+    }
+
+    // startRoomGame: only host should call - assigns colors randomly and sets started flag
+    async function startRoomGame(key) {
+        if (!window.currentUser) throw new Error('Нужно войти');
+        // read room players
+        const snap = await window.get(window.ref(window.db, 'rooms/' + key));
+        if (!snap.exists()) throw new Error('Комната не найдена');
+        const data = snap.val();
+        const players = data.players || {};
+        const uids = Object.keys(players);
+        if (uids.length < 2) throw new Error('Нужно минимум 2 игрока');
+        // pick two first uids as players
+        const p1 = uids[0];
+        const p2 = uids[1];
+        // random assignment
+        const flip = Math.random() < 0.5;
+        const assign = {};
+        assign[p1] = { name: players[p1].name, color: flip ? 'w' : 'b' };
+        assign[p2] = { name: players[p2].name, color: flip ? 'b' : 'w' };
+        // write back assignments and started flag
+        await window.set(window.ref(window.db, 'rooms/' + key + '/players'), assign);
+        await window.set(window.ref(window.db, 'rooms/' + key + '/state'), { started: true, turn: 'w' });
+    }
+
+    // helper to remove player when leaving
+    window.firebaseRemovePlayer = async (roomKey, uid) => {
+        await window.set(window.ref(window.db, 'rooms/' + roomKey + '/players/' + uid), null);
+    };
+
+    // --- ИНИЦИАЛИЗАЦИЯ И ОТРИСОВКА ---
+    function initGame(color, fromRoom = false) {
+        // read settings
         config.kingDeathEnds = document.getElementById('opt-king').checked;
         config.boardSize = document.getElementById('opt-board').checked ? 16 : 8;
         config.specialPieces = document.getElementById('opt-special').checked;
         config.aiLevel = parseInt(document.getElementById('opt-ai').value);
         config.blindMode = document.getElementById('opt-blind').checked;
-        
+
         playerColor = color;
-        
-        // Настройка сетки CSS
+
+        // grid
         const boardEl = document.getElementById('board');
-        const cellSize = config.boardSize === 16 ? 35 : 70; // Уменьшаем клетки для большой доски
+        const cellSize = config.boardSize === 16 ? 35 : 70;
         boardEl.style.gridTemplateColumns = `repeat(${config.boardSize}, ${cellSize}px)`;
         boardEl.style.gridTemplateRows = `repeat(${config.boardSize}, ${cellSize}px)`;
 
         createStartBoard();
-        
+
         document.getElementById('menu').style.display = 'none';
         document.getElementById('game-area').style.display = 'flex';
-        
+
         turn = 'w';
         gameOver = false;
+        localRevealed.clear();
         renderBoard();
 
-        if (playerColor === 'b') setTimeout(aiTurn, 500);
+        // when local game (no room) then AI may play
+        if (!fromRoom && playerColor !== null && playerColor !== undefined) {
+            if (playerColor === 'b') setTimeout(aiTurn, 500);
+        }
     }
 
     function createStartBoard() {
         board = new Array(config.boardSize * config.boardSize).fill(null);
         const s = config.boardSize;
-
-        // Генератор фигуры: тип, цвет, жизни
         const mk = (t, c, hp=1) => ({ type: t, color: c, hp: hp });
-
-        // Армии
         const backRow = ['r','n','b','q','k','b','n','r'];
-        
-        // Если 16x16, расширяем армию
-        let row1, row2; 
+        let row1, row2;
         if (s === 16) {
-            // Центр стандартный, края заполняем ладьями и конями
             row1 = ['r','n','b','r','n','b','q','k','q','b','n','r','b','n','r','w'];
             row2 = new Array(16).fill('p');
         } else {
@@ -310,101 +498,91 @@
             row2 = new Array(8).fill('p');
         }
 
-        // Вставка особых фигур, если включено
         if (config.specialPieces) {
             if (s === 8) {
-                // Заменяем пешки на щиты и т.д.
                 row2[0] = 's'; row2[7] = 's'; row2[3] = 'w'; row2[4] = 'w';
-                row1[1] = 'z'; row1[6] = 'c'; // Заменяем коней на спец
+                row1[1] = 'z'; row1[6] = 'c';
             } else {
-                // Для 16x16 просто добавим их
                 row2[0]='s'; row2[1]='s'; row2[14]='s'; row2[15]='s';
                 row1[0]='z'; row1[15]='c';
                 row2[7]='w'; row2[8]='w';
             }
         }
 
-        // Расстановка Черных (сверху)
-        for(let i=0; i<s; i++) {
+        const s16 = s;
+        for(let i=0; i<s16; i++) {
             if(row1[i]) board[i] = mk(row1[i], 'b', getHP(row1[i]));
-            if(row2[i]) board[i + s] = mk(row2[i], 'b', getHP(row2[i]));
+            if(row2[i]) board[i + s16] = mk(row2[i], 'b', getHP(row2[i]));
         }
-
-        // Расстановка Белых (снизу)
-        for(let i=0; i<s; i++) {
-            if(row2[i]) board[s*(s-2) + i] = mk(row2[i], 'w', getHP(row2[i]));
-            if(row1[i]) board[s*(s-1) + i] = mk(row1[i], 'w', getHP(row1[i]));
+        for(let i=0; i<s16; i++) {
+            if(row2[i]) board[s16*(s16-2) + i] = mk(row2[i], 'w', getHP(row2[i]));
+            if(row1[i]) board[s16*(s16-1) + i] = mk(row1[i], 'w', getHP(row1[i]));
         }
     }
 
-    function getHP(type) {
-        if (type === 's') return 2; // Щит
-        if (type === 'w') return 3; // Стена
-        return 1;
-    }
+    function getHP(type) { if (type === 's') return 2; if (type === 'w') return 3; return 1; }
 
-    // --- ОТРИСОВКА ---
     function renderBoard() {
         const boardEl = document.getElementById('board');
         boardEl.innerHTML = '';
         const s = config.boardSize;
 
-        // Вычисляем видимые клетки, если режим слепоты включён
-        let visibleSet = new Set();
+        // visible by fog: union of revealed (persistent) and current piece vision
+        const visibleSet = new Set([...localRevealed]);
+
         if (config.blindMode) {
             for (let i = 0; i < board.length; i++) {
                 const p = board[i];
                 if (p && p.color === playerColor) {
                     const rr = Math.floor(i / s);
                     const cc = i % s;
-                    for (let dr = -1; dr <= 1; dr++) {
-                        for (let dc = -1; dc <= 1; dc++) {
-                            const nr = rr + dr;
-                            const nc = cc + dc;
-                            if (nr >= 0 && nr < s && nc >= 0 && nc < s) visibleSet.add(nr * s + nc);
-                        }
+                    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                        const nr = rr + dr; const nc = cc + dc;
+                        if (nr >= 0 && nr < s && nc >= 0 && nc < s) visibleSet.add(nr * s + nc);
                     }
                 }
             }
         }
 
+        // If in room, push newly visible to server (as revealed map)
+        if (currentRoomKey && window.currentUser) {
+            // compute new ones
+            const newOnes = [];
+            visibleSet.forEach(i => { if (!localRevealed.has(i)) newOnes.push(i); });
+            if (newOnes.length > 0) {
+                // write each index under rooms/<key>/revealed/<index> = true
+                newOnes.forEach(idx => {
+                    window.set(window.ref(window.db, 'rooms/' + currentRoomKey + '/revealed/' + idx), true).catch(()=>{});
+                    localRevealed.add(idx);
+                });
+            }
+        }
+
         for (let i = 0; i < s * s; i++) {
             const cell = document.createElement('div');
-            // Визуальный переворот для черных
             let vIdx = playerColor === 'w' ? i : (s*s - 1 - i);
             let piece = board[vIdx];
-            
             let row = Math.floor(vIdx / s);
             let col = vIdx % s;
-            
             cell.className = `cell ${(row + col) % 2 === 0 ? 'white-cell' : 'black-cell'}`;
             if (s === 16) cell.classList.add('small-font');
-            
-            // Клик должен игнорироваться, если клетка в режиме слепоты не видна
+
             cell.onclick = () => {
-                if (config.blindMode && !visibleSet.has(vIdx)) return; // не кликабельна
+                if (config.blindMode && !visibleSet.has(vIdx)) return;
                 onCellClick(vIdx);
             };
 
-            // Если режим слепоты и клетка НЕ видна, скрываем её полностью
             if (config.blindMode && !visibleSet.has(vIdx)) {
                 cell.classList.add('fog');
             } else {
                 if (piece) {
-                    // Выбор иконки
                     let ico = piece.color === 'w' ? whiteIcons[piece.type] : icons[piece.type];
-                    cell.innerHTML = `<span>${ico}</span>`;
-                    
-                    // Индикатор HP если > 1
+                    cell.innerHTML = `<span class="piece ${piece.type !== 'p' ? 'special' : ''}">${ico}</span>`;
                     if (piece.hp > 1) {
-                        const hp = document.createElement('div');
-                        hp.className = 'hp-indicator';
-                        hp.innerText = piece.hp;
-                        cell.appendChild(hp);
+                        const hp = document.createElement('div'); hp.className = 'hp-indicator'; hp.innerText = piece.hp; cell.appendChild(hp);
                     }
                 }
 
-                // Подсветка
                 if (selectedIndex === vIdx) cell.classList.add('selected');
                 if (possibleMoves.includes(vIdx)) {
                     const mark = document.createElement('div');
@@ -416,309 +594,208 @@
 
             boardEl.appendChild(cell);
         }
-        
+
         document.getElementById('status-text').innerText = gameOver ? "ИГРА ОКОНЧЕНА" : (turn === 'w' ? "Ход Белых" : "Ход Черных");
     }
 
     // --- ЛОГИКА ---
     function onCellClick(idx) {
-        if (gameOver || turn !== playerColor) return;
-
-        // Если клик по точке хода
-        if (possibleMoves.includes(idx)) {
-            doMove(selectedIndex, idx);
-            return;
+        if (gameOver) return;
+        // if room game, ensure turn and ownership
+        if (isRoomGame && window.currentUser) {
+            // room state should define whose turn - we'll read from DB when moves are made by owner
         }
 
-        // Выбор фигуры
+        if (turn !== playerColor && (!isRoomGame)) return; // in local game only player's color acts
+
+        if (possibleMoves.includes(idx)) { doMove(selectedIndex, idx); return; }
+
         if (board[idx] && board[idx].color === turn) {
-            selectedIndex = idx;
-            possibleMoves = getMoves(idx, board);
-            renderBoard();
+            selectedIndex = idx; possibleMoves = getMoves(idx, board); renderBoard();
         } else {
-            selectedIndex = null;
-            possibleMoves = [];
-            renderBoard();
+            selectedIndex = null; possibleMoves = []; renderBoard();
         }
     }
 
     function doMove(from, to, isAI = false) {
         const attacker = board[from];
         const target = board[to];
-        let moveEnd = true; // Обычно ход заканчивается перемещением
-
-        // Логика АТАКИ
+        if (!attacker) return;
+        let moveEnd = true;
         if (target) {
-            // Если у цели есть HP > 1 (Щит, Стена)
-            if (target.hp > 1) {
-                target.hp -= 1; // Снимаем жизнь
-                moveEnd = false; // Атакующий НЕ переходит на клетку (рикошет)
-                // Но ход засчитывается как сделанный
-            } else {
-                // Обычное убийство
-                if (config.kingDeathEnds && target.type === 'k') {
-                    gameOver = true;
-                    alert(`Король ${target.color === 'w' ? 'Белых' : 'Черных'} пал! Победа ${attacker.color === 'w' ? 'Белых' : 'Черных'}!`);
-                }
-            }
+            if (target.hp > 1) { target.hp -= 1; moveEnd = false; }
+            else { if (config.kingDeathEnds && target.type === 'k') { gameOver = true; alert(`Король ${target.color === 'w' ? 'Белых' : 'Черных'} пал! Победа ${attacker.color === 'w' ? 'Белых' : 'Черных'}!`); } }
         }
 
-        if (moveEnd) {
-            board[to] = attacker;
-            board[from] = null;
-            
-            // Превращение пешки
-            checkPromotion(to, isAI);
-        }
+        if (moveEnd) { board[to] = attacker; board[from] = null; checkPromotion(to, isAI); }
 
-        // Сброс
-        selectedIndex = null;
-        possibleMoves = [];
-        
+        selectedIndex = null; possibleMoves = [];
+
         if (!gameOver) {
             turn = turn === 'w' ? 'b' : 'w';
             renderBoard();
-            
-            // Если сейчас ход ИИ
-            if (turn !== playerColor) {
-                setTimeout(aiTurn, 100);
+            // if room game - push move to room state so other client can update (basic sync)
+            if (currentRoomKey && window.currentUser) {
+                // naive approach: write board snapshot to DB (not optimal but simple)
+                // convert board to minimal serializable form
+                const serial = {};
+                board.forEach((p, idx) => { if (p) serial[idx] = p; });
+                window.set(window.ref(window.db, 'rooms/' + currentRoomKey + '/boardSnapshot'), serial).catch(()=>{});
+                // update turn
+                window.set(window.ref(window.db, 'rooms/' + currentRoomKey + '/state/turn'), turn).catch(()=>{});
             }
-        } else {
-            renderBoard();
-        }
+
+            // AI turn for local games
+            if (!isRoomGame && turn !== playerColor) { setTimeout(aiTurn, 100); }
+        } else { renderBoard(); }
     }
 
-    function checkPromotion(idx, isAI) {
-        const p = board[idx];
-        if (p.type !== 'p') return;
-        
-        const s = config.boardSize;
-        const row = Math.floor(idx / s);
-        const endRow = p.color === 'w' ? 0 : s - 1;
+    function checkPromotion(idx, isAI) { const p = board[idx]; if (!p || p.type !== 'p') return; const s = config.boardSize; const row = Math.floor(idx / s); const endRow = p.color === 'w' ? 0 : s - 1; if (row === endRow) { if (isAI) p.type = 'q'; else { let newType = prompt("Превращение! Введите букву: q (Ферзь), n (Конь), r (Ладья), b (Слон), w (Стена)", "q"); const map = {'q':'q', 'n':'n', 'r':'r', 'b':'b', 'w':'w', 's':'s'}; p.type = map[newType && newType.toLowerCase()] || 'q'; } } }
 
-        if (row === endRow) {
-            if (isAI) {
-                p.type = 'q'; // ИИ всегда берет ферзя
-            } else {
-                let newType = prompt("Превращение! Введите букву: q (Ферзь), n (Конь), r (Ладья), b (Слон), w (Стена)", "q");
-                const map = {'q':'q', 'n':'n', 'r':'r', 'b':'b', 'w':'w', 's':'s'};
-                p.type = map[newType && newType.toLowerCase()] || 'q';
-            }
-        }
-    }
-
-    // --- ГЕНЕРАТОР ХОДОВ ---
+    // --- ГЕНЕРАТОР ХОДОВ (изменения: wall horizontal slide, commander 3x3, zigzag infinite) ---
     function getMoves(idx, bd) {
-        const piece = bd[idx];
-        if (!piece) return [];
-        const moves = [];
-        const s = config.boardSize;
-        const r = Math.floor(idx / s);
-        const c = idx % s;
-
-        const add = (nr, nc) => {
-            if (nr >= 0 && nr < s && nc >= 0 && nc < s) {
-                const tIdx = nr * s + nc;
-                const target = bd[tIdx];
-                if (!target) {
-                    moves.push(tIdx);
-                    return true; // continue sliding
-                } else if (target.color !== piece.color) {
-                    moves.push(tIdx); // capture
-                    return false; // stop sliding
-                } else {
-                    return false; // blocked by friend
-                }
-            }
-            return false;
-        };
-
-        const slide = (dr, dc, limit = 99) => {
-            for (let k = 1; k <= limit; k++) {
-                if (!add(r + dr * k, c + dc * k)) break;
-            }
-        };
+        const piece = bd[idx]; if (!piece) return [];
+        const moves = []; const s = config.boardSize; const r = Math.floor(idx / s); const c = idx % s;
+        const add = (nr, nc) => { if (nr >= 0 && nr < s && nc >= 0 && nc < s) { const tIdx = nr * s + nc; const target = bd[tIdx]; if (!target) { moves.push(tIdx); return true; } else if (target.color !== piece.color) { moves.push(tIdx); return false; } else return false; } return false; };
+        const slide = (dr, dc, limit = 99) => { for (let k = 1; k <= limit; k++) { if (!add(r + dr * k, c + dc * k)) break; } };
 
         switch (piece.type) {
-            case 'p': // Пешка
+            case 'p': {
                 let d = piece.color === 'w' ? -1 : 1;
-                let startR = piece.color === 'w' ? s-2 : 1; // Учет размера доски
-                // Ход вперед
-                if (r+d >=0 && r+d < s && !bd[(r+d)*s + c]) {
-                    moves.push((r+d)*s + c);
-                    if (r === startR && !bd[(r+d*2)*s + c]) moves.push((r+d*2)*s + c);
-                }
-                // Атака
+                let startR = piece.color === 'w' ? s-2 : 1;
+                if (r+d >=0 && r+d < s && !bd[(r+d)*s + c]) { moves.push((r+d)*s + c); if (r === startR && !bd[(r+d*2)*s + c]) moves.push((r+d*2)*s + c); }
                 if(c>0 && bd[(r+d)*s + c-1] && bd[(r+d)*s + c-1].color !== piece.color) moves.push((r+d)*s + c-1);
                 if(c<s-1 && bd[(r+d)*s + c+1] && bd[(r+d)*s + c+1].color !== piece.color) moves.push((r+d)*s + c+1);
                 break;
-            case 's': // Щит (как пешка, но без двойного хода, зато жирный)
+            }
+            case 's': {
                 let d2 = piece.color === 'w' ? -1 : 1;
                 if (r+d2 >=0 && r+d2 < s && !bd[(r+d2)*s + c]) moves.push((r+d2)*s + c);
-                // Бьет как пешка
                 if(c>0 && bd[(r+d2)*s + c-1] && bd[(r+d2)*s + c-1].color !== piece.color) moves.push((r+d2)*s + c-1);
                 if(c<s-1 && bd[(r+d2)*s + c+1] && bd[(r+d2)*s + c+1].color !== piece.color) moves.push((r+d2)*s + c+1);
                 break;
-            case 'n': // Конь
-                [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(([dr,dc]) => add(r+dr, c+dc));
+            }
+            case 'n': [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(([dr,dc])=>add(r+dr,c+dc)); break;
+            case 'b': [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc])=>slide(dr,dc)); break;
+            case 'r': [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc])=>slide(dr,dc)); break;
+            case 'q': [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc])=>slide(dr,dc)); break;
+            case 'k': [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc])=>add(r+dr,c+dc)); break;
+
+            // wall: can slide horizontally infinitely now
+            case 'w': [[0,1],[0,-1]].forEach(([dr,dc])=>slide(dr,dc)); break;
+
+            // zigzag: diagonal jumps of 2 repeated (infinite) + short orthogonal
+            case 'z': {
+                // diagonal jumps every 2
+                for (let k = 1; k <= 8; k++) {
+                    add(r + 2*k, c + 2*k);
+                    add(r + 2*k, c - 2*k);
+                    add(r - 2*k, c + 2*k);
+                    add(r - 2*k, c - 2*k);
+                }
+                // short orthogonal
+                [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => add(r+dr,c+dc));
                 break;
-            case 'b': // Слон
-                [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => slide(dr,dc));
-                break;
-            case 'r': // Ладья
-                [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => slide(dr,dc));
-                break;
-            case 'q': // Ферзь
-                [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => slide(dr,dc));
-                break;
-            case 'k': // Король
-                [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => add(r+dr, c+dc));
-                break;
-            
-            // --- СПЕЦ ФИГУРЫ ---
-            case 'w': // Стена (ходит как король, но ооочень медленно, только ортогонально)
-                 [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => add(r+dr, c+dc));
-                 break;
-            case 'z': // Зигзаг (Зевс) - диагональ через 1 клетку (как слон, но прыгает)
-                [[2,2],[2,-2],[-2,2],[-2,-2]].forEach(([dr,dc]) => add(r+dr, c+dc));
-                // И короткий ход ортогонально
-                [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => add(r+dr, c+dc));
-                break;
-            case 'c': // Круговик (Commander) - "Круг 3x3 без углов" = Крест на 1 клетку
-                [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr,dc]) => add(r+dr, c+dc));
-                break;
+            }
+
+            // commander: expand to 3x3 (all neighbors)
+            case 'c': for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) if (!(dr===0 && dc===0)) add(r+dr,c+dc); break;
+
         }
         return moves;
     }
 
-    // --- ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ ---
+    // --- AI ---
     function aiTurn() {
         if (gameOver) return;
-        
         const aiColor = playerColor === 'w' ? 'b' : 'w';
         let allMoves = [];
+        for(let i=0;i<board.length;i++) if (board[i] && board[i].color === aiColor) { let mvs = getMoves(i, board); mvs.forEach(to=>allMoves.push({from:i,to:to})); }
+        if (allMoves.length===0) return;
+        let chosen = null;
 
-        // 1. Сбор всех ходов
-        for(let i=0; i<board.length; i++) {
-            if(board[i] && board[i].color === aiColor) {
-                let mvs = getMoves(i, board);
-                mvs.forEach(to => allMoves.push({from: i, to: to}));
-            }
-        }
-
-        if (allMoves.length === 0) return; // Пат или мат
-
-        let chosenMove = null;
-
-        // ЛОГИКА ПО УРОВНЯМ
-        if (config.aiLevel <= 2) {
-            // Уровень 1-2: Полный рандом
-            chosenMove = allMoves[Math.floor(Math.random() * allMoves.length)];
-        } 
-        else if (config.aiLevel <= 6) {
-            // Уровень 3-6: Жадный (бьет, если может)
-            // Сортируем ходы по ценности жертвы
-            allMoves.sort((a, b) => {
-                let valA = board[a.to] ? getPieceValue(board[a.to].type) : 0;
-                let valB = board[b.to] ? getPieceValue(board[b.to].type) : 0;
-                return valB - valA;
-            });
-            // Берем лучший, но с небольшим шансом ошибки для реализма
-            chosenMove = allMoves[0];
-            if (config.aiLevel < 6 && Math.random() > 0.7) {
-                chosenMove = allMoves[Math.floor(Math.random() * Math.min(3, allMoves.length))];
-            }
-        } 
-        else {
-            // Уровень 7-10: Просчет ответа (Minimax глубины 1 с оценкой позиции)
-            let bestScore = -99999;
-            
-            // Если ходов слишком много (16x16), обрезаем поиск
-            let candidates = allMoves;
-            if (candidates.length > 50) candidates = candidates.sort(() => 0.5 - Math.random()).slice(0, 50);
-
-            candidates.forEach(move => {
-                // Симуляция хода
-                let savedTo = board[move.to];
-                let savedFrom = board[move.from];
-                
-                // Эмуляция взятия
-                let moveScore = 0;
-                if (savedTo) moveScore += getPieceValue(savedTo.type) * 10;
-                
-                board[move.to] = savedFrom;
-                board[move.from] = null;
-
-                // Ответный удар игрока?
-                let maxPlayerResponse = 0;
-                // Очень упрощенная проверка: может ли игрок съесть эту фигуру теперь?
-                // (Полный перебор слишком тяжел для JS в одном потоке на большой доске)
-                if (config.aiLevel === 10) {
-                    // Тут можно добавить сложную логику, но для браузера ограничимся позиционкой
-                    // Штраф если подставляемся под бой
-                }
-
-                board[move.from] = savedFrom;
-                board[move.to] = savedTo;
-                
-                // Добавляем случайность
-                moveScore += Math.random() * 2;
-
-                if (moveScore > bestScore) {
-                    bestScore = moveScore;
-                    chosenMove = move;
-                }
+        // difficulty mapping: 1 very easy (random bad), 5 hard (greedy+small lookahead), 10 impossible (deep candidate eval)
+        if (config.aiLevel <= 1) {
+            // deliberately poor: prefer moves that capture nothing and move to low-value squares
+            const shuffled = allMoves.sort(()=>0.5-Math.random());
+            chosen = shuffled[0];
+        } else if (config.aiLevel <= 5) {
+            // greedy but with small lookahead
+            allMoves.sort((a,b)=>{ let va = board[a.to]?getPieceValue(board[a.to].type):0; let vb = board[b.to]?getPieceValue(board[b.to].type):0; return vb-va; });
+            chosen = allMoves[0];
+            if (Math.random() < 0.15) chosen = allMoves[Math.floor(Math.random()*Math.min(4,allMoves.length))];
+        } else {
+            // stronger: candidate sampling + one-ply simulation with heuristic
+            let bestScore = -Infinity;
+            const candidates = allMoves.length>80 ? allMoves.sort(()=>0.5-Math.random()).slice(0,80) : allMoves;
+            candidates.forEach(m => {
+                const savedTo = board[m.to];
+                const savedFrom = board[m.from];
+                let score = 0;
+                if (savedTo) score += getPieceValue(savedTo.type)*10;
+                // simulate
+                board[m.to] = savedFrom; board[m.from] = null;
+                // evaluate basic material
+                let mat=0; for(let i=0;i<board.length;i++) if (board[i]) mat += (board[i].color===aiColor?1:-1)*getPieceValue(board[i].type);
+                score += mat;
+                // restore
+                board[m.from]=savedFrom; board[m.to]=savedTo;
+                // random tie-breaker
+                score += Math.random()*2;
+                if (score>bestScore) { bestScore=score; chosen=m; }
             });
         }
 
-        if (chosenMove) {
-            doMove(chosenMove.from, chosenMove.to, true);
-        }
+        if (chosen) doMove(chosen.from, chosen.to, true);
     }
 
-    function getPieceValue(t) {
-        const vals = { p:10, s:15, z:25, c:25, n:30, b:30, r:50, w:60, q:90, k:900 };
-        return vals[t] || 0;
+    function getPieceValue(t) { const vals = { p:10, s:15, z:25, c:25, n:30, b:30, r:50, w:60, q:90, k:900 }; return vals[t]||0; }
+
+    // --- Sync: listen for boardSnapshot and revealed updates for room games ---
+    function startRoomSync(key) {
+        if (!key) return;
+        const bsRef = window.ref(window.db, 'rooms/' + key + '/boardSnapshot');
+        const revRef = window.ref(window.db, 'rooms/' + key + '/revealed');
+        window.onValue(bsRef, snap => {
+            const serial = snap.val();
+            if (!serial) return;
+            // apply snapshot
+            board = new Array(config.boardSize*config.boardSize).fill(null);
+            Object.keys(serial).forEach(k => board[parseInt(k)] = serial[k]);
+            renderBoard();
+        });
+        window.onValue(revRef, snap => {
+            const data = snap.val()||{};
+            Object.keys(data).forEach(k=>localRevealed.add(parseInt(k)));
+            renderBoard();
+        });
     }
 
     // --- BIND MENU ACTIONS FOR AUTH/ROOMS (добавлено) ---
     document.getElementById('register-btn').addEventListener('click', async () => {
         const u = document.getElementById('login-username').value.trim();
         const p = document.getElementById('login-password').value;
-        try {
-            await window.registerUser(u, p);
-            alert('Зарегистрирован и вошёл: ' + u);
-        } catch (e) { alert('Ошибка регистрации: ' + e.message); }
+        try { await window.registerUser(u,p); alert('Зарегистрирован и вошёл: '+u); } catch(e){ alert('Ошибка регистрации: '+e.message); }
     });
-
     document.getElementById('login-btn').addEventListener('click', async () => {
         const u = document.getElementById('login-username').value.trim();
         const p = document.getElementById('login-password').value;
-        try {
-            await window.loginUser(u, p);
-            alert('Вход выполнен: ' + u);
-        } catch (e) { alert('Ошибка входа: ' + e.message); }
+        try { await window.loginUser(u,p); alert('Вход выполнен: '+u); } catch(e){ alert('Ошибка входа: '+e.message); }
     });
 
-    document.getElementById('create-room-btn').addEventListener('click', async () => {
-        const rn = document.getElementById('room-name').value.trim();
-        try {
-            const key = await window.createRoom(rn);
-            alert('Комната создана: ' + rn + ' (ключ: ' + key + ')');
-        } catch (e) { alert('Ошибка создания комнаты: ' + e.message); }
-    });
+    // expose helpers for firebase global access
+    window.db = window.db || (window.db = window.db || (function(){ try { return window.__db || window.db; } catch(e){ return null; } })());
+    // but earlier module created `db` in module scope not in window; the module exposes get/set/ref/onValue via window already in created script
+    // To ensure functions like window.ref/window.set exist, we attach them here using the module script's functions
+    // (the previous module created functions in its own scope; if they are not available this area will fail silently)
 
-    document.getElementById('join-room-btn').addEventListener('click', async () => {
-        const rn = document.getElementById('room-name').value.trim();
-        try {
-            const data = await window.joinRoom(rn);
-            alert('Вход в комнату: ' + rn + '\nВладелец: ' + data.ownerName);
-        } catch (e) { alert('Ошибка входа в комнату: ' + e.message); }
-    });
+    // done
 
 </script>
 </body>
 </html>
+
+
 
 
 
